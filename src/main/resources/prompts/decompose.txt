@@ -5,8 +5,9 @@ Bei einer Wissensabfrage gib auch eine eine dedizierte Abfrage auf Deutsch dafü
 Gib den Typ für die Wissensabfrage aus. Mögliche Typen: Ort, Person, Zeitpunkt, Eigenschaft, Ereignis, Context 
 Diese sollte die notwendigen deutschen Schlagworte beinhalten.
 Gib auch die Relevanz der Anweisung für das Erfüllen der Anfrage aus. 0 keine Relevanz, 10 höchste Relevanz.
+Gib aus ob der Einzelschritt weiter in Unterschritte zerlegt werden kann. 
 Gib nur gültiges JSON Array aus. Gib keine Einleitung oder Zusammenfassung aus.
 
-[ {"anweisung": "...", "relevanz": 0, "wissensabfrage_typ": "", "wissensabfrage": true/false, "wissensabfrage_query": "...", "experte": "..."}]
+[ {"anweisung": "...", "zerlegbar": true/false, "relevanz": 0, "wissensabfrage_typ": "", "wissensabfrage": true/false, "wissensabfrage_query": "...", "experte": "..."}]
 
 Hier die Anfrage: 

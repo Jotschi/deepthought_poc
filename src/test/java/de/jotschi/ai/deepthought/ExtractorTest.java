@@ -1,29 +1,21 @@
 package de.jotschi.ai.deepthought;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.Scanner;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * Dummy implementation for an extractor which uses the
+ * https://github.com/telekom/wikipedia-22-12-de-dpr dataset to generate a
+ * trainingset for a LLM ToT decomposer finetune.
+ */
 public class ExtractorTest extends AbstractLLMTest {
 
     String name = "out_8092541_2";
-
-//    @Test
-//    public void testLLM() {
-//        Prompt prompt = ps.getPrompt(PromptKey.DECOMPOSE);
-//        LLMContext ctx = LLMContext.ctx(prompt, LLM.OLLAMA_LLAMA31_70B_INST_Q4_K_S);
-//        ctx.setText("Nenne das Geburtsjahr und den Geburtsort von Dieter Steinwender.");
-////        llm.listModels(ctx);
-//        String out = llm.generate(ctx);
-//        System.out.println(out);
-//    }
 
     @Test
     public void testExtractor() {

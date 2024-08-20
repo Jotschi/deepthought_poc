@@ -24,6 +24,8 @@ import io.vertx.core.json.JsonObject;
 public class Deepthought {
 
     private static final LLM PRIMARY_LLM = LLM.OLLAMA_MISTRAL_7B_INST_V03_FP16;
+    private static final int MAX_DEPTH = 3;
+    private boolean RECURSIVE = false;
 
     private OllamaService llm;
     private PromptService ps;
@@ -42,7 +44,33 @@ public class Deepthought {
             return processQuery(query);
         });
         Decomposition decomp = mapper.readValue(json.encodePrettily(), Decomposition.class);
-        return decomp;
+        if (RECURSIVE) {
+            return decompose(1, decomp);
+        } else {
+            return decomp;
+        }
+    }
+
+    private Decomposition decompose(int level, Decomposition decomposition) throws IOException {
+        int n = 1;
+        if (level >= MAX_DEPTH) {
+            return decomposition;
+        }
+        for (DecompositionStep step : decomposition.getSteps()) {
+            if (step.isProcessable()) {
+                System.out.println("Decomposing: [" + level + "." + n + "]");
+                String query = step.isQueryFlag() ? step.getQueryText() : step.getText();
+                System.out.println(query);
+                JsonObject subJson = cache.computeIfAbsent("decomp", query, cid -> {
+                    return processQuery(query);
+                });
+                Decomposition decomp = mapper.readValue(subJson.encodePrettily(), Decomposition.class);
+                step.setDecomposition(decomp);
+                decompose(level + 1, decomp);
+                n++;
+            }
+        }
+        return decomposition;
     }
 
     public String evalStep(int id, String query, DecompositionStep step) throws IOException {
@@ -50,7 +78,7 @@ public class Deepthought {
             // Check whether we need to query another source
             if (step.isQueryFlag()) {
 //                return dsm.process(step);
-                
+
                 Prompt prompt = ps.getPrompt(PromptKey.STEP);
                 prompt.set("expert", step.getExpert());
                 LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
@@ -87,6 +115,7 @@ public class Deepthought {
             String queryType = stepIn.getString("wissensabfrage_typ");
             String text = stepIn.getString("anweisung");
             String expert = stepIn.getString("experte");
+            boolean processable = stepIn.getBoolean("zerlegbar");
             int relevance = stepIn.getInteger("relevanz");
             if (queryFlag && (queryText == null || queryType == null)) {
                 System.out.println(stepIn.encodePrettily());
@@ -111,6 +140,7 @@ public class Deepthought {
                 stepOut.put("query_text", null);
                 stepOut.put("query_type", null);
             }
+            stepOut.put("processable", processable);
             stepOut.put("relevance", relevance);
             stepOut.put("text", text);
             stepOut.put("expert", expert);

@@ -17,7 +17,11 @@ public class DecompositionStep {
 
     private String text;
 
+    private boolean processable;
+
     private String expert;
+
+    private Decomposition decomposition;
 
     public String getExpert() {
         return expert;
@@ -41,5 +45,13 @@ public class DecompositionStep {
 
     public String getText() {
         return text;
+    }
+
+    public boolean isProcessable() {
+        return processable;
+    }
+
+    public void setDecomposition(Decomposition decomposition) {
+        this.decomposition = decomposition;
     }
 }

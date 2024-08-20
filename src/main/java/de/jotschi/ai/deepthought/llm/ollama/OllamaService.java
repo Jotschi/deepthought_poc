@@ -56,9 +56,9 @@ public class OllamaService implements LLMService {
             input += "\n" + ctx.text();
         }
 
-        System.out.println("---------");
-        System.out.println(input);
-        System.out.println("---------");
+//        System.out.println("---------");
+//        System.out.println(input);
+//        System.out.println("---------");
         return model.generate(input);
     }
 
