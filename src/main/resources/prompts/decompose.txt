@@ -1,0 +1,12 @@
+Zerlege folgende Anfrage in Einzelschritte die man dediziert bearbeiten kann. Beantworte die Anfrage nicht.
+Weise jedem Schritt eine deutsche Anweisung für einen Experten zu den du konsultieren würdest.
+Gib an ob der Experte auf Wissen zurückgreifen muss. Verzichte auf Relativsätze!
+Bei einer Wissensabfrage gib auch eine eine dedizierte Abfrage auf Deutsch dafür aus.
+Gib den Typ für die Wissensabfrage aus. Mögliche Typen: Ort, Person, Zeitpunkt, Eigenschaft, Ereignis, Context 
+Diese sollte die notwendigen deutschen Schlagworte beinhalten.
+Gib auch die Relevanz der Anweisung für das Erfüllen der Anfrage aus. 0 keine Relevanz, 10 höchste Relevanz.
+Gib nur gültiges JSON Array aus. Gib keine Einleitung oder Zusammenfassung aus.
+
+[ {"anweisung": "...", "relevanz": 0, "wissensabfrage_typ": "", "wissensabfrage": true/false, "wissensabfrage_query": "...", "experte": "..."}]
+
+Hier die Anfrage: 

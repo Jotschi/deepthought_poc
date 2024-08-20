@@ -1,0 +1,7 @@
+Beantworte folgende Anfrage unter Verwendung der Bereitgestellten Experten Informationen und formuliere einen fließtext. Kopiere nicht einfach die Angaben der Experten. Vermeide Aufzählungen. 
+Die Anfrage wurde in Einzelschritte zerlegt und für jeden Schritt wurde ein entsprechender Experte befragt.
+
+Hier ihr Feedback:
+${feedback}
+
+Hier die Anfrage:

@@ -1,0 +1,8 @@
+.classpath
+.settings
+.project
+.factorypath
+
+/cache
+/target
+/wikipedia-22-12-de-dpr
