@@ -21,7 +21,9 @@ public class DecompositionStep {
 
     private String expert;
 
-    private Decomposition decomposition;
+    private DeepthoughtMemoryEntry entry;
+
+    private String result;
 
     public String getExpert() {
         return expert;
@@ -51,7 +53,20 @@ public class DecompositionStep {
         return processable;
     }
 
-    public void setDecomposition(Decomposition decomposition) {
-        this.decomposition = decomposition;
+    public void setEntry(DeepthoughtMemoryEntry entry) {
+        this.entry = entry;
     }
+
+    public DeepthoughtMemoryEntry getEntry() {
+        return entry;
+    }
+
+    public String getResult() {
+        return result;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
+
 }

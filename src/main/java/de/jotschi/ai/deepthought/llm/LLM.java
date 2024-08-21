@@ -10,7 +10,9 @@ public enum LLM {
 
     OLLAMA_MISTRAL_7B_INST_FP16("mistral:7b-instruct-fp16"),
 
-    OLLAMA_MISTRAL_7B_INST_V03_FP16("mistral:7b-instruct-v0.3-fp16");
+    OLLAMA_MISTRAL_7B_INST_V03_FP16("mistral:7b-instruct-v0.3-fp16"),
+
+    OLLAMA_GEMMA2_27B_INST_Q8("gemma2:27b-instruct-q8_0");
 
     /**
      * Model key that is being used when preparing the API request.

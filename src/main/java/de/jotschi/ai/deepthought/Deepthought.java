@@ -14,36 +14,37 @@ import de.jotschi.ai.deepthought.llm.ollama.OllamaService;
 import de.jotschi.ai.deepthought.llm.prompt.Prompt;
 import de.jotschi.ai.deepthought.llm.prompt.PromptKey;
 import de.jotschi.ai.deepthought.llm.prompt.PromptService;
-import de.jotschi.ai.deepthought.model.Decomposition;
 import de.jotschi.ai.deepthought.model.DecompositionStep;
 import de.jotschi.ai.deepthought.model.DeepthoughtMemory;
-import de.jotschi.ai.deepthought.model.MemorizedThought;
+import de.jotschi.ai.deepthought.model.DeepthoughtMemoryEntry;
+import de.jotschi.ai.deepthought.model.QueryContext;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public class Deepthought {
 
-    private static final LLM PRIMARY_LLM = LLM.OLLAMA_MISTRAL_7B_INST_V03_FP16;
+    private static final LLM PRIMARY_LLM = LLM.OLLAMA_GEMMA2_27B_INST_Q8;
     private static final int MAX_DEPTH = 3;
     private boolean RECURSIVE = false;
 
     private OllamaService llm;
     private PromptService ps;
     private ObjectMapper mapper = new ObjectMapper();
-    private DeepthoughtMemory memory = new DeepthoughtMemory(this);
     private JsonCache cache = new JsonCache();
     private DatasourceManager dsm = new DatasourceManager();
+
+    private List<QueryContext> mockQueryContextList;
 
     public Deepthought(OllamaService llm, PromptService ps) {
         this.llm = llm;
         this.ps = ps;
     }
 
-    public Decomposition decompose(String query) throws IOException {
-        JsonObject json = cache.computeIfAbsent("decomp", query, cid -> {
-            return processQuery(query);
+    public DeepthoughtMemoryEntry decompose(String query, QueryContext context) throws IOException {
+        JsonObject json = cache.computeIfAbsent("decomp", query + context, cid -> {
+            return processQuery(query, context);
         });
-        Decomposition decomp = mapper.readValue(json.encodePrettily(), Decomposition.class);
+        DeepthoughtMemoryEntry decomp = mapper.readValue(json.encodePrettily(), DeepthoughtMemoryEntry.class);
         if (RECURSIVE) {
             return decompose(1, decomp);
         } else {
@@ -51,21 +52,22 @@ public class Deepthought {
         }
     }
 
-    private Decomposition decompose(int level, Decomposition decomposition) throws IOException {
+    private DeepthoughtMemoryEntry decompose(int level, DeepthoughtMemoryEntry decomposition) throws IOException {
         int n = 1;
         if (level >= MAX_DEPTH) {
             return decomposition;
         }
-        for (DecompositionStep step : decomposition.getSteps()) {
+        // Process each step individually
+        for (DecompositionStep step : decomposition.steps()) {
             if (step.isProcessable()) {
                 System.out.println("Decomposing: [" + level + "." + n + "]");
                 String query = step.isQueryFlag() ? step.getQueryText() : step.getText();
                 System.out.println(query);
                 JsonObject subJson = cache.computeIfAbsent("decomp", query, cid -> {
-                    return processQuery(query);
+                    return processQuery(query, decomposition.context());
                 });
-                Decomposition decomp = mapper.readValue(subJson.encodePrettily(), Decomposition.class);
-                step.setDecomposition(decomp);
+                DeepthoughtMemoryEntry decomp = mapper.readValue(subJson.encodePrettily(), DeepthoughtMemoryEntry.class);
+                step.setEntry(decomp);
                 decompose(level + 1, decomp);
                 n++;
             }
@@ -73,32 +75,41 @@ public class Deepthought {
         return decomposition;
     }
 
-    public String evalStep(int id, String query, DecompositionStep step) throws IOException {
+    public String evalStep(int id, DecompositionStep step, QueryContext queryCtx) throws IOException {
+        String query = step.isQueryFlag() ? step.getQueryText() : step.getText();
         JsonObject json = cache.computeIfAbsent("eval", query + "_" + id, cid -> {
             // Check whether we need to query another source
-            if (step.isQueryFlag()) {
 //                return dsm.process(step);
-
-                Prompt prompt = ps.getPrompt(PromptKey.STEP);
-                prompt.set("expert", step.getExpert());
-                LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
-                ctx.setText(step.getQueryText());
-                String text = llm.generate(ctx);
-                return new JsonObject().put("text", text);
-            } else {
-                Prompt prompt = ps.getPrompt(PromptKey.STEP);
-                prompt.set("expert", step.getExpert());
-                LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
-                ctx.setText(step.getText());
-                String text = llm.generate(ctx);
-                return new JsonObject().put("text", text);
-            }
+            return eval(step, queryCtx, query);
         });
         return json.getString("text");
     }
 
-    private JsonObject processQuery(String query) {
-        Prompt prompt = ps.getPrompt(PromptKey.DECOMPOSE);
+    private JsonObject eval(DecompositionStep step, QueryContext queryCtx, String query) {
+        Prompt prompt = null;
+        if (queryCtx == null) {
+            prompt = ps.getPrompt(PromptKey.STEP);
+        } else {
+            prompt = ps.getPrompt(PromptKey.STEP_WITH_CONTEXT);
+            prompt.set("context", queryCtx.getText());
+        }
+
+        prompt.set("expert", step.getExpert());
+        LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
+        ctx.setText(query);
+        String text = llm.generate(ctx);
+        return new JsonObject().put("text", text);
+    }
+
+    private JsonObject processQuery(String query, QueryContext context) {
+
+        Prompt prompt = null;
+        if (context != null) {
+            prompt = ps.getPrompt(PromptKey.DECOMPOSE_WITH_CONTEXT);
+            prompt.set("context", context.getText());
+        } else {
+            prompt = ps.getPrompt(PromptKey.DECOMPOSE);
+        }
 
         LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
         ctx.setText(query);
@@ -154,26 +165,30 @@ public class Deepthought {
         return datasetEntry;
     }
 
-    public DeepthoughtMemory memory() {
-        return memory;
-    }
+    private String answer(DeepthoughtMemory memory) {
 
-    public String answer() {
-        Prompt prompt = ps.getPrompt(PromptKey.FINALIZE);
-        LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
-        StringBuilder builder = new StringBuilder();
-        List<MemorizedThought> thoughts = memory.thoughts();
-        System.out.println("Using: " + thoughts.size() + " thoughts");
-        for (MemorizedThought thought : thoughts) {
-            String ctxText = thought.result();
-            builder.append("\n\n# " + thought.step().getText() + ":\n\n" + quote(ctxText));
+        // Start with the root elements
+        for (DeepthoughtMemoryEntry entry : memory.entries()) {
+            StringBuilder builder = new StringBuilder();
+            String ctxText = entry.result();
+
+            // TODO only eval the best branch
+            Prompt prompt = ps.getPrompt(PromptKey.FINALIZE);
+            LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
+            List<DeepthoughtMemoryEntry> entries = memory.entries();
+            System.out.println("Using: " + entries.size() + " memory entries");
+
+            for (DecompositionStep step : entry.steps()) {
+
+                builder.append("\n\n# " + step.getText() + ":\n\n" + quote(step.getResult()));
+            }
+            prompt.set("feedback", builder.toString());
+            ctx.setText(memory.query());
+            String stepOut = llm.generate(ctx);
+            System.out.println(stepOut);
+            return stepOut;
         }
-
-        prompt.set("feedback", builder.toString());
-        ctx.setText(memory.query());
-        String stepOut = llm.generate(ctx);
-        System.out.println(stepOut);
-        return stepOut;
+        return null;
 
     }
 
@@ -183,6 +198,32 @@ public class Deepthought {
 
     public DatasourceManager datasourceManager() {
         return dsm;
+    }
+
+    public String process(String query) throws IOException {
+        // Initialize the state for processing
+        DeepthoughtMemory memory = new DeepthoughtMemory(this, query);
+
+        // Load an initial set chunks that might be relevant to the query
+        List<QueryContext> contextList = lookupQueryContext(query);
+
+        // Add the initial root entries to the memory
+        for (QueryContext context : contextList) {
+            memory.entries().add(new DeepthoughtMemoryEntry(query, context, null, null));
+        }
+
+        // Decompose and eval the memory entries
+        memory.decompose();
+
+        return answer(memory);
+    }
+
+    private List<QueryContext> lookupQueryContext(String query) {
+        return mockQueryContextList;
+    }
+
+    public void setMockQueryContextList(List<QueryContext> mockQueryContextList) {
+        this.mockQueryContextList = mockQueryContextList;
     }
 
 }

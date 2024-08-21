@@ -10,31 +10,57 @@ public class DeepthoughtMemory {
 
     private Deepthought dt;
 
-    private List<MemorizedThought> thoughts = new ArrayList<>();
+    private List<DeepthoughtMemoryEntry> entries = new ArrayList<>();
     private String query;
+    private boolean evaluated = false;
 
-    public DeepthoughtMemory(Deepthought dt) {
+    public DeepthoughtMemory(Deepthought dt, String query) {
         this.dt = dt;
+        this.query = query;
     }
 
-    public void process(Decomposition decomp) throws IOException {
-        int id = 1;
-        for (DecompositionStep step : decomp.getSteps()) {
-            String result = dt.evalStep(id++, query, step);
-            thoughts.add(new MemorizedThought(step, result));
+    /**
+     * Iterate over all entries and decompose them.
+     * 
+     * @throws IOException
+     */
+    public void decompose() throws IOException {
+        if (evaluated) {
+            throw new RuntimeException("The memory can only be evaluated one time");
         }
+        int id = 1;
+        for (DeepthoughtMemoryEntry entry : entries) {
+
+            // Decompose with context
+            if (entry.steps() == null) {
+                
+                // 1. Decompose the entry into steps
+                DeepthoughtMemoryEntry processedEntry = dt.decompose(entry.query(), entry.context());
+                entry.setSteps(processedEntry.steps());
+
+                // 2. Evaluate each step
+                for (DecompositionStep step : processedEntry.steps()) {
+                    String result = dt.evalStep(id++, step, entry.context());
+                    step.setResult(result);
+                }
+            }
+//            } else {
+//                // Now decompose the query with use of the initial context
+//                for (DecompositionStep step : entry.steps()) {
+//                    dt.decompose(step);
+//                }
+//            }
+
+        }
+        evaluated = true;
     }
 
-    public List<MemorizedThought> thoughts() {
-        return thoughts;
+    public List<DeepthoughtMemoryEntry> entries() {
+        return entries;
     }
 
     public String query() {
         return query;
-    }
-
-    public void setQuery(String query) {
-        this.query = query;
     }
 
 }

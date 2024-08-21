@@ -4,11 +4,14 @@ public enum PromptKey {
 
     DECOMPOSE("decompose.txt"),
 
-    STEP("step.txt"), 
-    
+    DECOMPOSE_WITH_CONTEXT("decompose_with_context.txt"),
+
+    STEP("step.txt"),
+
+    STEP_WITH_CONTEXT("step_with_context.txt"),
+
     FINALIZE("finalize.txt");
 
-    
     private String path;
 
     PromptKey(String path) {
