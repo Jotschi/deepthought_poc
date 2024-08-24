@@ -56,7 +56,7 @@ public class Deepthought {
         LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
         ctx.setText(query);
 //        llm.listModels(ctx);
-        String out = llm.generate(ctx);
+        String out = llm.generate(ctx, "json");
         System.out.println(out);
         JsonArray json = new JsonArray(out);
         JsonArray jsonOut = new JsonArray();
@@ -144,7 +144,8 @@ public class Deepthought {
         JsonObject json = cache.computeIfAbsent("eval", t.id(), cid -> {
             return eval(t.text(), t.context(), t.expert());
         });
-        t.setResult(json.getString("text"));
+        t.setResult(json.getString("antwort"));
+        t.setConfidence(Integer.parseInt(json.getString("anteil")));
 
         for (Thought thought : t.thoughts()) {
             evaluateThought(thought);
@@ -163,8 +164,10 @@ public class Deepthought {
         prompt.set("expert", expert);
         LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
         ctx.setText(query);
-        String text = llm.generate(ctx);
-        return new JsonObject().put("text", text);
+        String jsonStr = llm.generate(ctx, "json");
+        JsonObject json = new JsonObject(jsonStr);
+        System.out.println(json.encodePrettily());
+        return json;
     }
 
     private void decompose(Thought thought) throws JsonMappingException, JsonProcessingException {
@@ -198,7 +201,7 @@ public class Deepthought {
             }
             prompt.set("feedback", contextBuilder.toString());
             ctx.setText(thought.text());
-            builder.append("[" + (i++) + "] => " + llm.generate(ctx) + "\n\n");
+            builder.append("[" + (i++) + "] => " + llm.generate(ctx, "text") + "\n\n");
         }
         return builder.toString();
     }

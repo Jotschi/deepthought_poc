@@ -18,6 +18,10 @@ public interface Thought {
 
     List<Thought> thoughts();
 
+    int confidence();
+
+    void setConfidence(int confidence);
+
     /**
      * Add a new follow-up thought
      * 

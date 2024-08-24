@@ -1,6 +1,14 @@
 Du bist ein ${expert} und hast folgende Anfrage erhalten. Liefere Informationen für die Anfrage und nutze die folgende Informationen. 
 Gib zudem aus wieviel Prozent an Informationen du aus dem Kontext genutzt hast.
+Gib die Informationen nur als gültiges JSON aus.
 
+Json Format:
+{
+	"antwort": "Informationen für die Anfrage",
+	"anteil": "Anteil in %"
+}
+
+Kontext:
 ${context}
 
 Anfrage:

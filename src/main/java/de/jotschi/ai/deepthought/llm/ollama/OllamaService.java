@@ -24,23 +24,23 @@ public class OllamaService implements LLMService {
         this.config = config;
     }
 
-    public String generate(LLM llm, String prompt, double temperature) {
+    public String generate(LLM llm, String prompt, double temperature, String format) {
         String url = llm.primaryHost() != null ? llm.primaryHost() : config.getOllamaAPIUrl();
         logger.info("Using {} for {}", url, llm);
         ChatLanguageModel model = OllamaChatModel.builder()
                 .baseUrl(url)
                 .timeout(Duration.ofMinutes(15))
                 .modelName(llm.key())
+                .format(format)
                 .numPredict(4096)
                 .temperature(temperature)
                 .build();
 
         return model.generate(prompt);
-
     }
 
     @Override
-    public String generate(LLMContext ctx, double temperature) {
+    public String generate(LLMContext ctx, double temperature, String format) {
         LLM llm = ctx.llmModel();
         String url = llm.primaryHost() != null ? llm.primaryHost() : config.getOllamaAPIUrl();
         logger.info("Using {} for {}", url, llm);
@@ -49,6 +49,7 @@ public class OllamaService implements LLMService {
                 .timeout(Duration.ofMinutes(15))
                 .modelName(ctx.llmModel().key())
                 .numPredict(4096)
+                .format(format)
                 .temperature(temperature)
                 .build();
         String input = ctx.prompt().text();

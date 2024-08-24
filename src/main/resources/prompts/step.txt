@@ -1,3 +1,11 @@
 Du bist ein ${expert} und hast folgende Anfrage erhalten. Liefere Informationen für die Anfrage.
+Gib zudem in Prozent aus sicher du bist das die Informationen zur Anfrage passen.
+Gib die Informationen nur als gültiges JSON aus.
+
+Json Format:
+{
+	"antwort": "Informationen für die Anfrage",
+	"anteil": "Anteil in %"
+}
 
 Anfrage:

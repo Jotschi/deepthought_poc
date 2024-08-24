@@ -34,7 +34,7 @@ public class DeepthoughtTest extends AbstractLLMTest {
 
     @Test
     public void noDeepThoughtTest() {
-        String answer = llm.generate(LLM.OLLAMA_GEMMA2_27B_INST_Q8, QUERY, 0.3d);
+        String answer = llm.generate(LLM.OLLAMA_GEMMA2_27B_INST_Q8, QUERY + " Gib aus wieviel prozent der informationen aus dem context du für die beantwortung genutzt hast. Antworte JSON", 0.3d, "json");
         System.out.println("Answer:\n\n" + answer);
     }
 }

@@ -20,6 +20,8 @@ public abstract class AbstractThought implements Thought {
 
     private String result;
 
+    private int confidence;
+
     public AbstractThought(String text, String context) {
         this.text = text;
         this.context = context;
@@ -57,8 +59,19 @@ public abstract class AbstractThought implements Thought {
         return result;
     }
 
+    @Override
     public void setResult(String result) {
         this.result = result;
+    }
+
+    @Override
+    public int confidence() {
+        return confidence;
+    }
+
+    @Override
+    public void setConfidence(int confidence) {
+        this.confidence = confidence;
     }
 
     @Override
