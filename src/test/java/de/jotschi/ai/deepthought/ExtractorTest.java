@@ -19,14 +19,9 @@ public class ExtractorTest extends AbstractLLMTest {
 
     @Test
     public void testExtractor() {
-        int r = 0;
         try (Scanner scanner = new Scanner(new File("wikipedia-22-12-de-dpr", "train.jsonl"))) {
             while (scanner.hasNextLine()) {
                 String jsonLine = scanner.nextLine();
-                r++;
-//                if (r < 630) {
-//                    continue;
-//                }
                 JsonObject json = new JsonObject(jsonLine);
                 String wikiId = json.getString("wiki_id");
                 String title = json.getString("title");

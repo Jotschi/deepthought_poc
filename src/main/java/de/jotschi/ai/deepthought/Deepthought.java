@@ -130,15 +130,14 @@ public class Deepthought {
             decompose(thought);
         }
 
-        return root;
-    }
-
-    public void evaluate(Thought t) {
-        for (Thought t2 : t.thoughts()) {
+        // Now evaluate the branches
+        for (Thought t2 : root.thoughts()) {
             for (Thought t3 : t2.thoughts()) {
                 evaluateThought(t3);
             }
         }
+
+        return root;
     }
 
     private void evaluateThought(Thought t) {
@@ -188,18 +187,20 @@ public class Deepthought {
 
         // Start with the root elements and iterate over all thoughts
         // TODO only eval the best branch
+        int i = 0;
+        StringBuilder builder = new StringBuilder();
         for (Thought thought : t.thoughts()) {
-            StringBuilder builder = new StringBuilder();
+            StringBuilder contextBuilder = new StringBuilder();
             Prompt prompt = ps.getPrompt(PromptKey.FINALIZE);
             LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
             for (Thought subThought : thought.thoughts()) {
-                builder.append("\n\n# " + subThought.text() + ":\n\n" + quote(subThought.result()));
+                contextBuilder.append("\n\n# " + subThought.text() + ":\n\n" + quote(subThought.result()));
             }
-            prompt.set("feedback", builder.toString());
+            prompt.set("feedback", contextBuilder.toString());
             ctx.setText(thought.text());
-            return llm.generate(ctx);
+            builder.append("[" + (i++) + "] => " + llm.generate(ctx) + "\n\n");
         }
-        return null;
+        return builder.toString();
     }
 
     protected List<String> lookupQueryContext(String query) {
