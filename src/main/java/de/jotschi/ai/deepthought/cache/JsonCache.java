@@ -2,13 +2,10 @@ package de.jotschi.ai.deepthought.cache;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.function.Function;
 
@@ -16,6 +13,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.jotschi.ai.deepthought.util.HashUtil;
 import io.vertx.core.json.JsonObject;
 
 public class JsonCache {
@@ -50,14 +48,8 @@ public class JsonCache {
     }
 
     private Path toCachePath(String prefix, String id) throws NoSuchAlgorithmException {
-        String hash = md5(id);
-        return Paths.get(prefix, hash.substring(0, 4), hash);
-    }
-
-    private String md5(String text) throws NoSuchAlgorithmException {
-        MessageDigest md5 = MessageDigest.getInstance("MD5");
-        md5.update(StandardCharsets.UTF_8.encode(text));
-        return String.format("%032x", new BigInteger(1, md5.digest()));
+        String hash = HashUtil.md5(id);
+        return Paths.get(prefix, hash.substring(0, 4), hash + ".json");
     }
 
 }

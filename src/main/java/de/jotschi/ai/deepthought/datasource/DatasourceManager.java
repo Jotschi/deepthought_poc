@@ -3,7 +3,7 @@ package de.jotschi.ai.deepthought.datasource;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.jotschi.ai.deepthought.model.DecompositionStep;
+import de.jotschi.ai.deepthought.model.memory.DecompositionStep;
 import io.vertx.core.json.JsonObject;
 
 public class DatasourceManager {

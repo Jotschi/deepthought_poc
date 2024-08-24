@@ -6,7 +6,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import de.jotschi.ai.deepthought.llm.LLM;
-import de.jotschi.ai.deepthought.model.QueryContext;
+import de.jotschi.ai.deepthought.model.Thought;
 
 /**
  * Unit test which executes the Deepthought PoC implementation.
@@ -22,9 +22,11 @@ public class DeepthoughtTest extends AbstractLLMTest {
 
     @Test
     public void deepThoughtTest() throws IOException {
-        dt.setMockQueryContextList(List.of(QueryContext.create(CONTEXT_1)));
-        String answer = dt.process(QUERY);
-        System.out.println("Answer: " + answer);
+        dt.addMockQueryContext(QUERY, List.of(CONTEXT_1));
+        Thought t = dt.process(QUERY);
+        System.out.println(t.toString());
+        dt.evaluate(t);
+        System.out.println("Answer: " + dt.answer(t));
     }
 
     @Test

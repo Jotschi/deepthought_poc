@@ -1,4 +1,4 @@
-package de.jotschi.ai.deepthought.model;
+package de.jotschi.ai.deepthought.model.memory;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -20,10 +20,6 @@ public class DecompositionStep {
     private boolean processable;
 
     private String expert;
-
-    private DeepthoughtMemoryEntry entry;
-
-    private String result;
 
     public String getExpert() {
         return expert;
@@ -51,22 +47,6 @@ public class DecompositionStep {
 
     public boolean isProcessable() {
         return processable;
-    }
-
-    public void setEntry(DeepthoughtMemoryEntry entry) {
-        this.entry = entry;
-    }
-
-    public DeepthoughtMemoryEntry getEntry() {
-        return entry;
-    }
-
-    public String getResult() {
-        return result;
-    }
-
-    public void setResult(String result) {
-        this.result = result;
     }
 
 }

@@ -1,9 +1,13 @@
 package de.jotschi.ai.deepthought;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.jotschi.ai.deepthought.cache.JsonCache;
@@ -14,10 +18,9 @@ import de.jotschi.ai.deepthought.llm.ollama.OllamaService;
 import de.jotschi.ai.deepthought.llm.prompt.Prompt;
 import de.jotschi.ai.deepthought.llm.prompt.PromptKey;
 import de.jotschi.ai.deepthought.llm.prompt.PromptService;
-import de.jotschi.ai.deepthought.model.DecompositionStep;
-import de.jotschi.ai.deepthought.model.DeepthoughtMemory;
-import de.jotschi.ai.deepthought.model.DeepthoughtMemoryEntry;
-import de.jotschi.ai.deepthought.model.QueryContext;
+import de.jotschi.ai.deepthought.model.Thought;
+import de.jotschi.ai.deepthought.model.memory.DecompositionResult;
+import de.jotschi.ai.deepthought.model.memory.DecompositionStep;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -29,84 +32,23 @@ public class Deepthought {
 
     private OllamaService llm;
     private PromptService ps;
-    private ObjectMapper mapper = new ObjectMapper();
+    private static ObjectMapper mapper = new ObjectMapper();
     private JsonCache cache = new JsonCache();
     private DatasourceManager dsm = new DatasourceManager();
 
-    private List<QueryContext> mockQueryContextList;
+    private Map<String, List<String>> mockContextMap = new HashMap<>();
 
     public Deepthought(OllamaService llm, PromptService ps) {
         this.llm = llm;
         this.ps = ps;
     }
 
-    public DeepthoughtMemoryEntry decompose(String query, QueryContext context) throws IOException {
-        JsonObject json = cache.computeIfAbsent("decomp", query + context, cid -> {
-            return processQuery(query, context);
-        });
-        DeepthoughtMemoryEntry decomp = mapper.readValue(json.encodePrettily(), DeepthoughtMemoryEntry.class);
-        if (RECURSIVE) {
-            return decompose(1, decomp);
-        } else {
-            return decomp;
-        }
-    }
-
-    private DeepthoughtMemoryEntry decompose(int level, DeepthoughtMemoryEntry decomposition) throws IOException {
-        int n = 1;
-        if (level >= MAX_DEPTH) {
-            return decomposition;
-        }
-        // Process each step individually
-        for (DecompositionStep step : decomposition.steps()) {
-            if (step.isProcessable()) {
-                System.out.println("Decomposing: [" + level + "." + n + "]");
-                String query = step.isQueryFlag() ? step.getQueryText() : step.getText();
-                System.out.println(query);
-                JsonObject subJson = cache.computeIfAbsent("decomp", query, cid -> {
-                    return processQuery(query, decomposition.context());
-                });
-                DeepthoughtMemoryEntry decomp = mapper.readValue(subJson.encodePrettily(), DeepthoughtMemoryEntry.class);
-                step.setEntry(decomp);
-                decompose(level + 1, decomp);
-                n++;
-            }
-        }
-        return decomposition;
-    }
-
-    public String evalStep(int id, DecompositionStep step, QueryContext queryCtx) throws IOException {
-        String query = step.isQueryFlag() ? step.getQueryText() : step.getText();
-        JsonObject json = cache.computeIfAbsent("eval", query + "_" + id, cid -> {
-            // Check whether we need to query another source
-//                return dsm.process(step);
-            return eval(step, queryCtx, query);
-        });
-        return json.getString("text");
-    }
-
-    private JsonObject eval(DecompositionStep step, QueryContext queryCtx, String query) {
-        Prompt prompt = null;
-        if (queryCtx == null) {
-            prompt = ps.getPrompt(PromptKey.STEP);
-        } else {
-            prompt = ps.getPrompt(PromptKey.STEP_WITH_CONTEXT);
-            prompt.set("context", queryCtx.getText());
-        }
-
-        prompt.set("expert", step.getExpert());
-        LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
-        ctx.setText(query);
-        String text = llm.generate(ctx);
-        return new JsonObject().put("text", text);
-    }
-
-    private JsonObject processQuery(String query, QueryContext context) {
+    private JsonObject processQuery(String query, String context) {
 
         Prompt prompt = null;
         if (context != null) {
             prompt = ps.getPrompt(PromptKey.DECOMPOSE_WITH_CONTEXT);
-            prompt.set("context", context.getText());
+            prompt.set("context", context);
         } else {
             prompt = ps.getPrompt(PromptKey.DECOMPOSE);
         }
@@ -165,33 +107,6 @@ public class Deepthought {
         return datasetEntry;
     }
 
-    private String answer(DeepthoughtMemory memory) {
-
-        // Start with the root elements
-        for (DeepthoughtMemoryEntry entry : memory.entries()) {
-            StringBuilder builder = new StringBuilder();
-            String ctxText = entry.result();
-
-            // TODO only eval the best branch
-            Prompt prompt = ps.getPrompt(PromptKey.FINALIZE);
-            LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
-            List<DeepthoughtMemoryEntry> entries = memory.entries();
-            System.out.println("Using: " + entries.size() + " memory entries");
-
-            for (DecompositionStep step : entry.steps()) {
-
-                builder.append("\n\n# " + step.getText() + ":\n\n" + quote(step.getResult()));
-            }
-            prompt.set("feedback", builder.toString());
-            ctx.setText(memory.query());
-            String stepOut = llm.generate(ctx);
-            System.out.println(stepOut);
-            return stepOut;
-        }
-        return null;
-
-    }
-
     private String quote(String text) {
         return text.replaceAll(".*\\R|.+\\z", Matcher.quoteReplacement("> ") + "$0");
     }
@@ -200,30 +115,99 @@ public class Deepthought {
         return dsm;
     }
 
-    public String process(String query) throws IOException {
-        // Initialize the state for processing
-        DeepthoughtMemory memory = new DeepthoughtMemory(this, query);
-
+    public Thought process(String query) throws IOException {
+        Thought root = Thought.of(query);
         // Load an initial set chunks that might be relevant to the query
-        List<QueryContext> contextList = lookupQueryContext(query);
+        List<String> contextList = lookupQueryContext(query);
 
-        // Add the initial root entries to the memory
-        for (QueryContext context : contextList) {
-            memory.entries().add(new DeepthoughtMemoryEntry(query, context, null, null));
+        // Add the initial root entries
+        for (String context : contextList) {
+            root.add(Thought.of(query, context));
         }
 
-        // Decompose and eval the memory entries
-        memory.decompose();
+        // Start decompose process for each branch
+        for (Thought thought : root.thoughts()) {
+            decompose(thought);
+        }
 
-        return answer(memory);
+        return root;
     }
 
-    private List<QueryContext> lookupQueryContext(String query) {
-        return mockQueryContextList;
+    public void evaluate(Thought t) {
+        for (Thought t2 : t.thoughts()) {
+            for (Thought t3 : t2.thoughts()) {
+                evaluateThought(t3);
+            }
+        }
     }
 
-    public void setMockQueryContextList(List<QueryContext> mockQueryContextList) {
-        this.mockQueryContextList = mockQueryContextList;
+    private void evaluateThought(Thought t) {
+        JsonObject json = cache.computeIfAbsent("eval", t.id(), cid -> {
+            return eval(t.text(), t.context(), t.expert());
+        });
+        t.setResult(json.getString("text"));
+
+        for (Thought thought : t.thoughts()) {
+            evaluateThought(thought);
+        }
+    }
+
+    private JsonObject eval(String query, String context, String expert) {
+        Prompt prompt = null;
+        if (context == null) {
+            prompt = ps.getPrompt(PromptKey.STEP);
+        } else {
+            prompt = ps.getPrompt(PromptKey.STEP_WITH_CONTEXT);
+            prompt.set("context", context);
+        }
+
+        prompt.set("expert", expert);
+        LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
+        ctx.setText(query);
+        String text = llm.generate(ctx);
+        return new JsonObject().put("text", text);
+    }
+
+    private void decompose(Thought thought) throws JsonMappingException, JsonProcessingException {
+        JsonObject json = cache.computeIfAbsent("decomp", thought.id(), cid -> {
+            return processQuery(thought.text(), thought.context());
+        });
+        DecompositionResult decomp = mapper.readValue(json.encodePrettily(), DecompositionResult.class);
+
+        for (DecompositionStep step : decomp.getSteps()) {
+            String stepQuery = step.isQueryFlag() ? step.getQueryText() : step.getText();
+            Thought stepThought = Thought.of(stepQuery).setExpert(step.getExpert());
+            thought.add(stepThought);
+            if (RECURSIVE) {
+                decompose(stepThought);
+            }
+        }
+    }
+
+    public String answer(Thought t) {
+
+        // Start with the root elements and iterate over all thoughts
+        // TODO only eval the best branch
+        for (Thought thought : t.thoughts()) {
+            StringBuilder builder = new StringBuilder();
+            Prompt prompt = ps.getPrompt(PromptKey.FINALIZE);
+            LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
+            for (Thought subThought : thought.thoughts()) {
+                builder.append("\n\n# " + subThought.text() + ":\n\n" + quote(subThought.result()));
+            }
+            prompt.set("feedback", builder.toString());
+            ctx.setText(thought.text());
+            return llm.generate(ctx);
+        }
+        return null;
+    }
+
+    protected List<String> lookupQueryContext(String query) {
+        return mockContextMap.get(query);
+    }
+
+    public void addMockQueryContext(String query, List<String> contextList) {
+        this.mockContextMap.put(query, contextList);
     }
 
 }
