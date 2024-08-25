@@ -13,7 +13,6 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.jotschi.ai.deepthought.util.HashUtil;
 import io.vertx.core.json.JsonObject;
 
 public class JsonCache {
@@ -48,8 +47,7 @@ public class JsonCache {
     }
 
     private Path toCachePath(String prefix, String id) throws NoSuchAlgorithmException {
-        String hash = HashUtil.md5(id);
-        return Paths.get(prefix, hash.substring(0, 4), hash + ".json");
+        return Paths.get(prefix, id.substring(0, 4), id + ".json");
     }
 
 }

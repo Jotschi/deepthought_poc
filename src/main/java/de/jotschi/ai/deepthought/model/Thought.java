@@ -14,7 +14,7 @@ public interface Thought {
 
     String result();
 
-    void setResult(String result);
+    Thought setResult(String result);
 
     List<Thought> thoughts();
 
@@ -32,6 +32,13 @@ public interface Thought {
     String id();
 
     String toString(int level);
+
+    /**
+     * Return the accumulated scrore for this though branch
+     * 
+     * @return
+     */
+    int score();
 
     static Thought of(String query) {
         return new ThoughtImpl(query);

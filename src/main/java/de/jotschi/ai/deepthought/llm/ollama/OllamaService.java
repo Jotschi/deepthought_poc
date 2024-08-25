@@ -52,10 +52,8 @@ public class OllamaService implements LLMService {
                 .format(format)
                 .temperature(temperature)
                 .build();
-        String input = ctx.prompt().text();
-        if (ctx.text() != null) {
-            input += "\n" + ctx.text();
-        }
+        
+        String input = ctx.llmInput();
 
 //        System.out.println("---------");
 //        System.out.println(input);

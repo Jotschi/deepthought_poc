@@ -50,8 +50,16 @@ public class LLMContext {
     public static LLMContext ctx(Prompt prompt, LLM model, String text) {
         return new LLMContext(model, prompt).setText(text);
     }
-    
+
     public static LLMContext ctx(Prompt prompt, LLM model) {
         return new LLMContext(model, prompt);
+    }
+
+    public String llmInput() {
+        String input = prompt().text();
+        if (text() != null) {
+            input += "\n" + text();
+        }
+        return input;
     }
 }

@@ -3,6 +3,7 @@ package de.jotschi.ai.deepthought;
 import java.io.IOException;
 import java.util.List;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.jotschi.ai.deepthought.llm.LLM;
@@ -31,8 +32,18 @@ public class DeepthoughtTest extends AbstractLLMTest {
         System.out.println(t.toString());
         System.out.println("Answers:\n\n" + dt.answer(t));
     }
+    
+    @Test
+    public void testEvaluate() {
+        Thought t = Thought.of("Warum sind die Delfine von der Erde verschwunden bevor sie zerstört wurde?");
+        t.add(Thought.of("Wo spielt der Roman 'Macht's gut und danke für den Fisch'").setResult("Der Roman 'Macht's gut und danke für den Fisch' von Douglas Adams spielt hauptsächlich auf der Erde, genauer gesagt in England.  Es gibt aber auch Szenen, die auf anderen Planeten im Universum stattfinden, wie z.B. Magrathea."));
+        t.add(Thought.of("Finde Informationen über das Verschwinden der Delfine im Roman").setResult("Um dir Informationen zum Verschwinden der Delfine im Roman zu liefern, brauche ich den Titel des Romans. Bitte nenne mir den Titel, damit ich dir weiterhelfen kann."));
+        t.add(Thought.of("Wird die Erde in 'Macht's gut und danke für den Fisch' zerstört?").setResult("Ja, am Ende von Douglas Adams' 'Per Anhalter durch die Galaxis'-Reihe, in dem Buch 'Macht's gut und danke für den Fisch', wird die Erde von den Vogonen zerstört, um Platz für eine Umgehungsstraße zu machen."));
+        dt.evaluateThought(t);
+    }
 
     @Test
+    @Disabled
     public void noDeepThoughtTest() {
         String answer = llm.generate(LLM.OLLAMA_GEMMA2_27B_INST_Q8, QUERY + " Gib aus wieviel prozent der informationen aus dem context du für die beantwortung genutzt hast. Antworte JSON", 0.3d, "json");
         System.out.println("Answer:\n\n" + answer);

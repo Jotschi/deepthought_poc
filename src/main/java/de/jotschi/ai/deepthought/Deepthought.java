@@ -55,8 +55,7 @@ public class Deepthought {
 
         LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
         ctx.setText(query);
-//        llm.listModels(ctx);
-        String out = llm.generate(ctx, "json");
+        String out = llm.generate(ctx, "text");
         System.out.println(out);
         JsonArray json = new JsonArray(out);
         JsonArray jsonOut = new JsonArray();
@@ -132,27 +131,61 @@ public class Deepthought {
 
         // Now evaluate the branches
         for (Thought t2 : root.thoughts()) {
-            for (Thought t3 : t2.thoughts()) {
-                evaluateThought(t3);
-            }
+
+            answerThought(t2);
+            evaluateThought(t2);
+//            for (Thought t3 : t2.thoughts()) {
+//                evaluateThought(t3);
+//            }
         }
 
         return root;
     }
 
-    private void evaluateThought(Thought t) {
-        JsonObject json = cache.computeIfAbsent("eval", t.id(), cid -> {
-            return eval(t.text(), t.context(), t.expert());
+    public JsonObject evaluateThought(Thought t) {
+        //JsonObject json = cache.computeIfAbsent("eval", t.id(), cid -> {
+            return evaluate(t);
+        //});
+    }
+
+    private JsonObject evaluate(Thought t) {
+        Prompt prompt = null;
+        prompt = ps.getPrompt(PromptKey.EVAL);
+
+        String expert = t.expert();
+        if (expert != null) {
+            prompt.set("expert", expert);
+        }
+        prompt.set("query", t.text());
+        LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
+
+        StringBuilder builder = new StringBuilder();
+        for (Thought sub : t.thoughts()) {
+            builder.append("# " + sub.text() + ":\n" + quote(sub.result()) + "\n\n");
+        }
+        ctx.setText(builder.toString());
+        System.out.println(ctx.llmInput());
+        String jsonStr = llm.generate(ctx, "text");
+        System.out.println(jsonStr);
+//        JsonObject json = new JsonObject(jsonStr);
+//        System.out.println(json.encodePrettily());
+//        return json;
+        return null;
+    }
+
+    private void answerThought(Thought t) {
+        JsonObject json = cache.computeIfAbsent("answer", t.id(), cid -> {
+            return answer(t.text(), t.context(), t.expert());
         });
         t.setResult(json.getString("antwort"));
         t.setConfidence(Integer.parseInt(json.getString("anteil")));
 
         for (Thought thought : t.thoughts()) {
-            evaluateThought(thought);
+            answerThought(thought);
         }
     }
 
-    private JsonObject eval(String query, String context, String expert) {
+    private JsonObject answer(String query, String context, String expert) {
         Prompt prompt = null;
         if (context == null) {
             prompt = ps.getPrompt(PromptKey.STEP);
@@ -161,11 +194,16 @@ public class Deepthought {
             prompt.set("context", context);
         }
 
-        prompt.set("expert", expert);
+        if (expert != null) {
+            prompt.set("expert", expert);
+        }
         LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
         ctx.setText(query);
         String jsonStr = llm.generate(ctx, "json");
         JsonObject json = new JsonObject(jsonStr);
+        json.put("query", query);
+        json.put("context", context);
+        json.put("expert", expert);
         System.out.println(json.encodePrettily());
         return json;
     }
@@ -201,7 +239,8 @@ public class Deepthought {
             }
             prompt.set("feedback", contextBuilder.toString());
             ctx.setText(thought.text());
-            builder.append("[" + (i++) + "] => " + llm.generate(ctx, "text") + "\n\n");
+            int score = thought.score();
+            builder.append("[" + (i++) + "|" + score + "] => " + llm.generate(ctx, "text") + "\n");
         }
         return builder.toString();
     }

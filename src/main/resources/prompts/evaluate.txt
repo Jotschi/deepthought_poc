@@ -1,0 +1,14 @@
+Überprüfe ob die folgenden Informationen ausreichen um die Anfrage zu beantworten.
+Falls Fragen offen bleiben gib diese im JSON aus. Gib den Fragen genug context und vermeide Relativsätze. 
+Gib die Antwort als gültiges JSON aus:
+
+{ 
+  "sufficent": true/false, 
+  "confidence": Wert in %,
+  "fragen": [string]
+} 
+
+Anfrage:
+${query}
+
+Informationen:

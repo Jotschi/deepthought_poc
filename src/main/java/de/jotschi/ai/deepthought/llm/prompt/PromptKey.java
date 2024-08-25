@@ -6,6 +6,8 @@ public enum PromptKey {
 
     DECOMPOSE_WITH_CONTEXT("decompose_with_context.txt"),
 
+    EVAL("evaluate.txt"),
+
     STEP("step.txt"),
 
     STEP_WITH_CONTEXT("step_with_context.txt"),

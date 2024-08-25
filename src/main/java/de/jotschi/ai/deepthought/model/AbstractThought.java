@@ -60,8 +60,9 @@ public abstract class AbstractThought implements Thought {
     }
 
     @Override
-    public void setResult(String result) {
+    public Thought setResult(String result) {
         this.result = result;
+        return this;
     }
 
     @Override
@@ -83,6 +84,19 @@ public abstract class AbstractThought implements Thought {
     public Thought setExpert(String expert) {
         this.expert = expert;
         return this;
+    }
+
+    @Override
+    public int score() {
+        int score = 0;
+        if (context() != null) {
+            score = confidence;
+        }
+        System.out.println("[" + id() + "] " +  score + "  " + context());
+        for (Thought t : thoughts()) {
+            score += t.score();
+        }
+        return score;
     }
 
     @Override
