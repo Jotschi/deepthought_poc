@@ -11,8 +11,6 @@ public class LLMContext {
      */
     private int tokenOutputLimit = 4096;
 
-    private String text;
-
     private final LLM model;
 
     private final Prompt prompt;
@@ -30,15 +28,6 @@ public class LLMContext {
         return model;
     }
 
-    public String text() {
-        return text;
-    }
-
-    public LLMContext setText(String text) {
-        this.text = text;
-        return this;
-    }
-
     public int tokenOutputLimit() {
         return tokenOutputLimit;
     }
@@ -47,19 +36,8 @@ public class LLMContext {
         this.tokenOutputLimit = tokenOutputLimit;
     }
 
-    public static LLMContext ctx(Prompt prompt, LLM model, String text) {
-        return new LLMContext(model, prompt).setText(text);
-    }
-
     public static LLMContext ctx(Prompt prompt, LLM model) {
         return new LLMContext(model, prompt);
     }
 
-    public String llmInput() {
-        String input = prompt().text();
-        if (text() != null) {
-            input += "\n" + text();
-        }
-        return input;
-    }
 }

@@ -5,11 +5,18 @@ import java.util.Map;
 public interface Prompt {
 
     /**
-     * Return the prompt text with applied parameters.
+     * Return the postfix text for the prompt.
      * 
      * @return
      */
     String text();
+
+    /**
+     * Set the text that is being added to the prompt.
+     * 
+     * @param string
+     */
+    void setText(String string);
 
     /**
      * Return the prompt key for the prompt.
@@ -32,4 +39,14 @@ public interface Prompt {
      * @return
      */
     Map<String, String> parameters();
+
+    /**
+     * Return the prompt text with applied parameters.
+     * 
+     * @return
+     */
+    String llmInput();
+
+    String template();
+
 }

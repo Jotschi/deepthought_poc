@@ -32,7 +32,7 @@ public class Deepthought {
 
     private OllamaService llm;
     private PromptService ps;
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static ObjectMapper mapper = JSON.getMapper();
     private JsonCache cache = new JsonCache();
     private DatasourceManager dsm = new DatasourceManager();
 
@@ -54,7 +54,7 @@ public class Deepthought {
         }
 
         LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
-        ctx.setText(query);
+        prompt.setText(query);
         String out = llm.generate(ctx, "text");
         System.out.println(out);
         JsonArray json = new JsonArray(out);
@@ -102,6 +102,7 @@ public class Deepthought {
         JsonObject datasetEntry = new JsonObject();
         datasetEntry.put("query", query);
         datasetEntry.put("steps", jsonOut);
+        datasetEntry.put("context", context);
         System.out.println(datasetEntry.encodePrettily());
         return datasetEntry;
     }
@@ -143,9 +144,12 @@ public class Deepthought {
     }
 
     public JsonObject evaluateThought(Thought t) {
-        //JsonObject json = cache.computeIfAbsent("eval", t.id(), cid -> {
-            return evaluate(t);
-        //});
+        // JsonObject json = cache.computeIfAbsent("eval", t.id(), cid -> {
+//        for (Thought sub : t.thoughts()) {
+        evaluate(t);
+//        }
+        return new JsonObject();
+        // });
     }
 
     private JsonObject evaluate(Thought t) {
@@ -157,20 +161,25 @@ public class Deepthought {
             prompt.set("expert", expert);
         }
         prompt.set("query", t.text());
+        prompt.set("result", t.result());
         LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
 
         StringBuilder builder = new StringBuilder();
-        for (Thought sub : t.thoughts()) {
+        for (Thought sub : t.parent().thoughts()) {
+            if (sub.id().equals(t.id())) {
+                continue;
+            }
             builder.append("# " + sub.text() + ":\n" + quote(sub.result()) + "\n\n");
         }
-        ctx.setText(builder.toString());
-        System.out.println(ctx.llmInput());
-        String jsonStr = llm.generate(ctx, "text");
+        prompt.set("extra", builder.toString());
+        System.out.println(prompt.llmInput());
+        String jsonStr = llm.generate(ctx, "json");
+        
         System.out.println(jsonStr);
-//        JsonObject json = new JsonObject(jsonStr);
-//        System.out.println(json.encodePrettily());
-//        return json;
-        return null;
+        JsonObject json = new JsonObject(jsonStr);
+        json.put("query", t.text());
+        json.put("altes_ergebnis", t.result());
+        return json;
     }
 
     private void answerThought(Thought t) {
@@ -188,17 +197,17 @@ public class Deepthought {
     private JsonObject answer(String query, String context, String expert) {
         Prompt prompt = null;
         if (context == null) {
-            prompt = ps.getPrompt(PromptKey.STEP);
+            prompt = ps.getPrompt(PromptKey.ANSWER);
         } else {
-            prompt = ps.getPrompt(PromptKey.STEP_WITH_CONTEXT);
+            prompt = ps.getPrompt(PromptKey.ANSWER_WITH_CONTEXT);
             prompt.set("context", context);
         }
 
         if (expert != null) {
             prompt.set("expert", expert);
         }
+        prompt.setText(query);
         LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
-        ctx.setText(query);
         String jsonStr = llm.generate(ctx, "json");
         JsonObject json = new JsonObject(jsonStr);
         json.put("query", query);
@@ -238,7 +247,7 @@ public class Deepthought {
                 contextBuilder.append("\n\n# " + subThought.text() + ":\n\n" + quote(subThought.result()));
             }
             prompt.set("feedback", contextBuilder.toString());
-            ctx.setText(thought.text());
+            prompt.setText(thought.text());
             int score = thought.score();
             builder.append("[" + (i++) + "|" + score + "] => " + llm.generate(ctx, "text") + "\n");
         }

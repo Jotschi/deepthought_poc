@@ -25,6 +25,7 @@ public class OllamaService implements LLMService {
     }
 
     public String generate(LLM llm, String prompt, double temperature, String format) {
+        System.err.println("---------");
         String url = llm.primaryHost() != null ? llm.primaryHost() : config.getOllamaAPIUrl();
         logger.info("Using {} for {}", url, llm);
         ChatLanguageModel model = OllamaChatModel.builder()
@@ -41,6 +42,7 @@ public class OllamaService implements LLMService {
 
     @Override
     public String generate(LLMContext ctx, double temperature, String format) {
+        System.err.println("---------");
         LLM llm = ctx.llmModel();
         String url = llm.primaryHost() != null ? llm.primaryHost() : config.getOllamaAPIUrl();
         logger.info("Using {} for {}", url, llm);
@@ -53,7 +55,7 @@ public class OllamaService implements LLMService {
                 .temperature(temperature)
                 .build();
         
-        String input = ctx.llmInput();
+        String input = ctx.prompt().llmInput();
 
 //        System.out.println("---------");
 //        System.out.println(input);

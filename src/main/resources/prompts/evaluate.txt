@@ -1,14 +1,27 @@
-Überprüfe ob die folgenden Informationen ausreichen um die Anfrage zu beantworten.
-Falls Fragen offen bleiben gib diese im JSON aus. Gib den Fragen genug context und vermeide Relativsätze. 
+Überprüfe ob das folgende Ergebnis zur Erfüllung der Anfrage passt.
+Berücksichtige dabei auch die Informationen.
+Gib mittels Konfidenz Eigenschaft in Prozent aus wie genau das Ergebnis ist.
+
+Falls Anfragen offen bleiben gib diese im JSON aus. 
+Gib den Anfragen genug Context und vermeide Relativsätze.
+Gib keine extra Anfragen aus wenn diese bereits in den weiteren Informationen enthalten sind. 
+Gib ein verbessertes Ergebnis aus. Nutze die Informationen um das ursprüngliche Ergebnis zu verbessern und die neuen Anfragen so z.B. direkt zu beantworten.
+
 Gib die Antwort als gültiges JSON aus:
 
-{ 
-  "sufficent": true/false, 
+{
+  "sufficent" : true/false, 
   "confidence": Wert in %,
-  "fragen": [string]
-} 
+  "anfragen" : string[],
+  "verbessertes_ergebnis" : ""
+}
+
+Informationen:
+${extra}
 
 Anfrage:
 ${query}
 
-Informationen:
+Ergebnis:
+${result}
+

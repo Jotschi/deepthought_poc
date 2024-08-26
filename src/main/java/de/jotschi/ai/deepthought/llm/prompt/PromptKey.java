@@ -8,9 +8,9 @@ public enum PromptKey {
 
     EVAL("evaluate.txt"),
 
-    STEP("step.txt"),
+    ANSWER("answer.txt"),
 
-    STEP_WITH_CONTEXT("step_with_context.txt"),
+    ANSWER_WITH_CONTEXT("answer_with_context.txt"),
 
     FINALIZE("finalize.txt");
 

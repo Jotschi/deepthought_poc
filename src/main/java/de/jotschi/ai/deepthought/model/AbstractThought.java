@@ -22,6 +22,8 @@ public abstract class AbstractThought implements Thought {
 
     private int confidence;
 
+    private Thought parent;
+
     public AbstractThought(String text, String context) {
         this.text = text;
         this.context = context;
@@ -52,6 +54,18 @@ public abstract class AbstractThought implements Thought {
             thoughts = new ArrayList<>();
         }
         thoughts.add(thought);
+        thought.setParent(this);
+    }
+
+    @Override
+    public Thought setParent(Thought thought) {
+        this.parent = thought;
+        return this;
+    }
+
+    @Override
+    public Thought parent() {
+        return parent;
     }
 
     @Override
@@ -92,7 +106,7 @@ public abstract class AbstractThought implements Thought {
         if (context() != null) {
             score = confidence;
         }
-        System.out.println("[" + id() + "] " +  score + "  " + context());
+        System.out.println("[" + id() + "] " + score + "  " + context());
         for (Thought t : thoughts()) {
             score += t.score();
         }

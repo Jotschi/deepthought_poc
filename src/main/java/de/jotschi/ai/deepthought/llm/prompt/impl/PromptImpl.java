@@ -9,21 +9,40 @@ import de.jotschi.ai.deepthought.llm.prompt.PromptKey;
 
 public class PromptImpl implements Prompt {
 
-    private final String text;
+    private final String template;
     private final PromptKey key;
     private final Map<String, String> parameters = new HashMap<>();
+    private String text;
 
-    public PromptImpl(String text, PromptKey key) {
-        this.text = text;
+    public PromptImpl(String template, PromptKey key) {
+        this.template = template;
         this.key = key;
     }
 
     @Override
+    public String template() {
+        return template;
+    }
+
+    @Override
     public String text() {
-        String output = text;
+        return text;
+    }
+
+    @Override
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    @Override
+    public String llmInput() {
+        String output = template;
         // Poor Mans Template Handling
         for (Entry<String, String> entry : parameters.entrySet()) {
             output = output.replaceAll("\\$\\{" + entry.getKey() + "\\}", entry.getValue());
+        }
+        if (text() != null) {
+            output += text();
         }
         return output;
     }
@@ -45,7 +64,7 @@ public class PromptImpl implements Prompt {
 
     @Override
     public String toString() {
-        return key() + "\n" + text();
+        return key() + "\n" + template();
     }
 
 }

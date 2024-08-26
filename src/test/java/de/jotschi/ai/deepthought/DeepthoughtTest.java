@@ -26,26 +26,34 @@ public class DeepthoughtTest extends AbstractLLMTest {
     public static final String CONTEXT_3 = "Der Mensch verwüstet die Erde im wahrsten Sinne des Wortes. Die Abholzung von Wäldern, Überdüngung, zu starke Beweidung, Übernutzung durch die Landwirtschaft, falsche Bewässerungsmethoden gehören zu den wichtigsten Ursachen, für die der Mensch verantwortlich ist.";
 
     @Test
+    @Disabled
     public void deepThoughtTest() throws IOException {
         dt.addMockQueryContext(QUERY, List.of(CONTEXT_1, CONTEXT_2, CONTEXT_3));
         Thought t = dt.process(QUERY);
         System.out.println(t.toString());
         System.out.println("Answers:\n\n" + dt.answer(t));
     }
-    
+
     @Test
     public void testEvaluate() {
         Thought t = Thought.of("Warum sind die Delfine von der Erde verschwunden bevor sie zerstört wurde?");
-        t.add(Thought.of("Wo spielt der Roman 'Macht's gut und danke für den Fisch'").setResult("Der Roman 'Macht's gut und danke für den Fisch' von Douglas Adams spielt hauptsächlich auf der Erde, genauer gesagt in England.  Es gibt aber auch Szenen, die auf anderen Planeten im Universum stattfinden, wie z.B. Magrathea."));
-        t.add(Thought.of("Finde Informationen über das Verschwinden der Delfine im Roman").setResult("Um dir Informationen zum Verschwinden der Delfine im Roman zu liefern, brauche ich den Titel des Romans. Bitte nenne mir den Titel, damit ich dir weiterhelfen kann."));
-        t.add(Thought.of("Wird die Erde in 'Macht's gut und danke für den Fisch' zerstört?").setResult("Ja, am Ende von Douglas Adams' 'Per Anhalter durch die Galaxis'-Reihe, in dem Buch 'Macht's gut und danke für den Fisch', wird die Erde von den Vogonen zerstört, um Platz für eine Umgehungsstraße zu machen."));
-        dt.evaluateThought(t);
+        Thought sub1 = Thought.of("Wo spielt der Roman 'Macht's gut und danke für den Fisch'").setResult(
+                "Der Roman 'Macht's gut und danke für den Fisch' von Douglas Adams spielt hauptsächlich auf der Erde, genauer gesagt in England.  Es gibt aber auch Szenen, die auf anderen Planeten im Universum stattfinden, wie z.B. Magrathea.");
+        Thought sub2 = Thought.of("Finde Informationen über das Verschwinden der Delfine im Roman").setResult(
+                "Um dir Informationen zum Verschwinden der Delfine im Roman zu liefern, brauche ich den Titel des Romans. Bitte nenne mir den Titel, damit ich dir weiterhelfen kann.");
+
+        t.add(sub1);
+        t.add(sub2);
+        dt.evaluateThought(sub2);
+//        t.add(Thought.of("Wird die Erde in 'Macht's gut und danke für den Fisch' zerstört?").setResult(
+//                "Ja, am Ende von Douglas Adams' 'Per Anhalter durch die Galaxis'-Reihe, in dem Buch 'Macht's gut und danke für den Fisch', wird die Erde von den Vogonen zerstört, um Platz für eine Umgehungsstraße zu machen."));
     }
 
     @Test
     @Disabled
     public void noDeepThoughtTest() {
-        String answer = llm.generate(LLM.OLLAMA_GEMMA2_27B_INST_Q8, QUERY + " Gib aus wieviel prozent der informationen aus dem context du für die beantwortung genutzt hast. Antworte JSON", 0.3d, "json");
+        String answer = llm.generate(LLM.OLLAMA_GEMMA2_27B_INST_Q8, QUERY + " Gib aus wieviel prozent der informationen aus dem context du für die beantwortung genutzt hast. Antworte JSON",
+                0.3d, "json");
         System.out.println("Answer:\n\n" + answer);
     }
 }

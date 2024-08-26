@@ -40,6 +40,10 @@ public interface Thought {
      */
     int score();
 
+    Thought parent();
+
+    Thought setParent(Thought thought);
+
     static Thought of(String query) {
         return new ThoughtImpl(query);
     }
