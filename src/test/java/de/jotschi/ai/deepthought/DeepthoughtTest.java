@@ -1,6 +1,7 @@
 package de.jotschi.ai.deepthought;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import org.junit.jupiter.api.Disabled;
@@ -27,11 +28,11 @@ public class DeepthoughtTest extends AbstractLLMTest {
 
     @Test
     @Disabled
-    public void deepThoughtTest() throws IOException {
+    public void deepThoughtTest() throws IOException, NoSuchAlgorithmException {
         dt.addMockQueryContext(QUERY, List.of(CONTEXT_1, CONTEXT_2, CONTEXT_3));
         Thought t = dt.process(QUERY);
         System.out.println(t.toString());
-        System.out.println("Answers:\n\n" + dt.answer(t));
+        System.out.println("Answers:\n\n" + dt.computeAnswer(t));
     }
 
     @Test

@@ -5,7 +5,7 @@ set -o errexit
 
 NAME=ollama-deepthought
 IMAGE=ollama/ollama
-VERSION="0.3.6"
+VERSION="0.3.9"
 
 podman pull $IMAGE:$VERSION
 podman rm -f $NAME || true
