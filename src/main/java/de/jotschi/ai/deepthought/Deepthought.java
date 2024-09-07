@@ -1,117 +1,39 @@
 package de.jotschi.ai.deepthought;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import de.jotschi.ai.deepthought.cache.JsonCache;
 import de.jotschi.ai.deepthought.datasource.DatasourceManager;
 import de.jotschi.ai.deepthought.llm.LLM;
-import de.jotschi.ai.deepthought.llm.LLMContext;
 import de.jotschi.ai.deepthought.llm.ollama.OllamaService;
-import de.jotschi.ai.deepthought.llm.prompt.Prompt;
-import de.jotschi.ai.deepthought.llm.prompt.PromptKey;
 import de.jotschi.ai.deepthought.llm.prompt.PromptService;
 import de.jotschi.ai.deepthought.model.Thought;
-import de.jotschi.ai.deepthought.model.memory.DecompositionResult;
-import de.jotschi.ai.deepthought.model.memory.DecompositionStep;
-import de.jotschi.ai.deepthought.util.HashUtil;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
+import de.jotschi.ai.deepthought.ops.impl.DeepthoughtAnswerOperation;
+import de.jotschi.ai.deepthought.ops.impl.DeepthoughtDecomposeOperation;
+import de.jotschi.ai.deepthought.ops.impl.DeepthoughtEvaluateOperation;
 
 public class Deepthought {
 
     // private static final LLM PRIMARY_LLM = LLM.OLLAMA_GEMMA2_27B_INST_Q8;
-    private static final LLM PRIMARY_LLM = LLM.OLLAMA_LLAMA31_8B_INST_Q8;
-    private static final int MAX_DEPTH = 3;
-    private boolean RECURSIVE = false;
+    public static final LLM PRIMARY_LLM = LLM.OLLAMA_LLAMA31_8B_INST_Q8;
+    public static final int MAX_DEPTH = 3;
+    public static boolean RECURSIVE = false;
 
-    private OllamaService llm;
-    private PromptService ps;
-    private static ObjectMapper mapper = JSON.getMapper();
-    private JsonCache cache = new JsonCache();
     private DatasourceManager dsm = new DatasourceManager();
 
     private Map<String, List<String>> mockContextMap = new HashMap<>();
 
+    // Operations
+    private DeepthoughtDecomposeOperation decomposeOp;
+    private DeepthoughtAnswerOperation answerOp;
+    private DeepthoughtEvaluateOperation evalOp;
+
     public Deepthought(OllamaService llm, PromptService ps) {
-        this.llm = llm;
-        this.ps = ps;
-    }
-
-    private JsonObject computeQuery(String query, String context) {
-
-        Prompt prompt = null;
-        if (context != null) {
-            prompt = ps.getPrompt(PromptKey.DECOMPOSE_WITH_CONTEXT);
-            prompt.set("context", context);
-        } else {
-            prompt = ps.getPrompt(PromptKey.DECOMPOSE);
-        }
-
-        LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
-        prompt.setText(query);
-        String out = llm.generate(ctx, "text");
-        System.out.println(out);
-        JsonArray json = new JsonArray(out);
-        JsonArray jsonOut = new JsonArray();
-        for (int i = 0; i < json.size(); i++) {
-            // In
-            JsonObject stepIn = json.getJsonObject(i);
-            boolean queryFlag = stepIn.getBoolean("wissensabfrage");
-            String queryText = stepIn.getString("wissensabfrage_query");
-            String queryType = stepIn.getString("wissensabfrage_typ");
-            String text = stepIn.getString("anweisung");
-            String expert = stepIn.getString("experte");
-            boolean processable = stepIn.getBoolean("zerlegbar");
-            int relevance = stepIn.getInteger("relevanz");
-            if (queryFlag && (queryText == null || queryType == null)) {
-                System.out.println(stepIn.encodePrettily());
-                throw new RuntimeException("Invalid json - invalid query");
-            }
-            if (text == null) {
-                throw new RuntimeException("Invalid json - no text");
-            }
-            if (relevance < 0 || relevance > 10) {
-                throw new RuntimeException("Invalid json - invalid relevance range");
-            }
-
-            System.out.println(stepIn.encodePrettily());
-
-            // Out
-            JsonObject stepOut = new JsonObject();
-            stepOut.put("query_flag", queryFlag);
-            if (queryFlag) {
-                stepOut.put("query_text", queryText);
-                stepOut.put("query_type", queryType);
-            } else {
-                stepOut.put("query_text", null);
-                stepOut.put("query_type", null);
-            }
-            stepOut.put("processable", processable);
-            stepOut.put("relevance", relevance);
-            stepOut.put("text", text);
-            stepOut.put("expert", expert);
-            jsonOut.add(stepOut);
-        }
-
-        JsonObject datasetEntry = new JsonObject();
-        datasetEntry.put("query", query);
-        datasetEntry.put("steps", jsonOut);
-        datasetEntry.put("context", context);
-        System.out.println(datasetEntry.encodePrettily());
-        return datasetEntry;
-    }
-
-    private String quote(String text) {
-        return text.replaceAll(".*\\R|.+\\z", Matcher.quoteReplacement("> ") + "$0");
+        this.decomposeOp = new DeepthoughtDecomposeOperation(llm, ps);
+        this.answerOp = new DeepthoughtAnswerOperation(llm, ps);
+        this.evalOp = new DeepthoughtEvaluateOperation(llm, ps);
     }
 
     public DatasourceManager datasourceManager() {
@@ -134,14 +56,14 @@ public class Deepthought {
 
         // Start decompose process for each branch
         for (Thought thought : root.thoughts()) {
-            decompose(thought);
+            decomposeOp.process(thought);
         }
 
         // Now evaluate the branches
         for (Thought t2 : root.thoughts()) {
 
-            answerThought(t2);
-            evaluateThought(t2);
+            answerOp.answerThought(t2);
+            evalOp.evaluateThought(t2);
 //            for (Thought t3 : t2.thoughts()) {
 //                evaluateThought(t3);
 //            }
@@ -150,132 +72,7 @@ public class Deepthought {
         return root;
     }
 
-    public JsonObject evaluateThought(Thought t) {
-        // JsonObject json = cache.computeIfAbsent("eval", t.id(), cid -> {
-//        for (Thought sub : t.thoughts()) {
-//        evaluate(t);
-//        }
-        return new JsonObject();
-        // });
-    }
-
-    private JsonObject evaluate(Thought t) {
-        Prompt prompt = null;
-        prompt = ps.getPrompt(PromptKey.EVAL);
-
-        String expert = t.expert();
-        if (expert != null) {
-            prompt.set("expert", expert);
-        }
-        prompt.set("query", t.text());
-        prompt.set("result", t.result());
-        LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
-
-        StringBuilder builder = new StringBuilder();
-        for (Thought sub : t.parent().thoughts()) {
-            if (sub.id().equals(t.id())) {
-                continue;
-            }
-            builder.append("# " + sub.text() + ":\n" + quote(sub.result()) + "\n\n");
-        }
-        prompt.set("extra", builder.toString());
-        System.out.println(prompt.llmInput());
-        String jsonStr = llm.generate(ctx, "json");
-
-        System.out.println(jsonStr);
-        JsonObject json = new JsonObject(jsonStr);
-        json.put("query", t.text());
-        json.put("altes_ergebnis", t.result());
-        return json;
-    }
-
-    private void answerThought(Thought t) {
-        JsonObject json = cache.computeIfAbsent("answer", t.id(), cid -> {
-            return answer(t.text(), t.context(), t.expert());
-        });
-        t.setResult(json.getString("antwort"));
-        t.setConfidence(parseAnteil(json.getString("anteil")));
-
-        for (Thought thought : t.thoughts()) {
-            answerThought(thought);
-        }
-    }
-
-    private int parseAnteil(String anteilStr) {
-        anteilStr = anteilStr.trim().replaceAll("%", "");
-        anteilStr = anteilStr.replaceAll(",", ".");
-        if (anteilStr.contains(".")) {
-            return (int) Float.parseFloat(anteilStr);
-        }
-        return Integer.parseInt(anteilStr);
-    }
-
-    private JsonObject answer(String query, String context, String expert) {
-        Prompt prompt = null;
-        if (context == null) {
-            prompt = ps.getPrompt(PromptKey.ANSWER);
-        } else {
-            prompt = ps.getPrompt(PromptKey.ANSWER_WITH_CONTEXT);
-            prompt.set("context", context);
-        }
-
-        if (expert != null) {
-            prompt.set("expert", expert);
-        }
-        prompt.setText(query);
-        LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
-        String jsonStr = llm.generate(ctx, "json");
-        JsonObject json = new JsonObject(jsonStr);
-        json.put("query", query);
-        json.put("context", context);
-        json.put("expert", expert);
-        System.out.println(json.encodePrettily());
-        return json;
-    }
-
-    private void decompose(Thought thought) throws JsonMappingException, JsonProcessingException {
-        JsonObject json = cache.computeIfAbsent("decomp", thought.id(), cid -> {
-            return computeQuery(thought.text(), thought.context());
-        });
-        DecompositionResult decomp = mapper.readValue(json.encodePrettily(), DecompositionResult.class);
-
-        for (DecompositionStep step : decomp.getSteps()) {
-            String stepQuery = step.isQueryFlag() ? step.getQueryText() : step.getText();
-            Thought stepThought = Thought.of(stepQuery).setExpert(step.getExpert());
-            thought.add(stepThought);
-            if (RECURSIVE) {
-                decompose(stepThought);
-            }
-        }
-    }
-
-    public String computeAnswer(Thought t) throws NoSuchAlgorithmException {
-
-        // Start with the root elements and iterate over all thoughts
-        // TODO only eval the best branch
-        int i = 0;
-        StringBuilder builder = new StringBuilder();
-        for (Thought thought : t.thoughts()) {
-            StringBuilder contextBuilder = new StringBuilder();
-
-            Prompt prompt = ps.getPrompt(PromptKey.FINALIZE);
-            LLMContext ctx = LLMContext.ctx(prompt, PRIMARY_LLM);
-            for (Thought subThought : thought.thoughts()) {
-                contextBuilder.append("\n\n# " + subThought.text() + ":\n\n" + quote(subThought.result()));
-            }
-            prompt.set("feedback", contextBuilder.toString());
-            prompt.setText(thought.text());
-            String cacheKeyValue = HashUtil.md5(PromptKey.FINALIZE.name() + "_" + PRIMARY_LLM.key() + "_" + thought.text() + "_" + contextBuilder.toString());
-
-            JsonObject json = cache.computeIfAbsent("final", cacheKeyValue, cid -> {
-                String txt = llm.generate(ctx, "text");
-                return new JsonObject().put("text", txt);
-            });
-            int score = thought.score();
-            builder.append("[" + (i++) + "|" + score + "] => " + json.getString("text") + "\n");
-        }
-        return builder.toString();
-    }
+   
 
     protected List<String> lookupQueryContext(String query) {
         return mockContextMap.get(query);
