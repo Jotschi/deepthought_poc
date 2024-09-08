@@ -1,6 +1,7 @@
 package de.jotschi.ai.deepthought;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,8 @@ import de.jotschi.ai.deepthought.model.Thought;
 import de.jotschi.ai.deepthought.ops.impl.DeepthoughtAnswerOperation;
 import de.jotschi.ai.deepthought.ops.impl.DeepthoughtDecomposeOperation;
 import de.jotschi.ai.deepthought.ops.impl.DeepthoughtEvaluateOperation;
+import de.jotschi.ai.deepthought.ops.impl.DeepthoughtFinalizeOperation;
+import io.vertx.core.json.JsonObject;
 
 public class Deepthought {
 
@@ -29,18 +32,28 @@ public class Deepthought {
     private DeepthoughtDecomposeOperation decomposeOp;
     private DeepthoughtAnswerOperation answerOp;
     private DeepthoughtEvaluateOperation evalOp;
+    private DeepthoughtFinalizeOperation finalOp;
 
     public Deepthought(OllamaService llm, PromptService ps) {
         this.decomposeOp = new DeepthoughtDecomposeOperation(llm, ps);
         this.answerOp = new DeepthoughtAnswerOperation(llm, ps);
         this.evalOp = new DeepthoughtEvaluateOperation(llm, ps);
+        this.finalOp = new DeepthoughtFinalizeOperation(llm, ps);
     }
 
     public DatasourceManager datasourceManager() {
         return dsm;
     }
 
-    public Thought process(String query) throws IOException {
+    /**
+     * Decompose the query and process each step sequentially.
+     * 
+     * @param query
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public Thought process(String query) throws IOException, NoSuchAlgorithmException {
         Thought root = Thought.of(query);
         // Load an initial set chunks that might be relevant to the query
         List<String> contextList = lookupQueryContext(query);
@@ -54,25 +67,29 @@ public class Deepthought {
             root.add(Thought.of(query));
         }
 
-        // Start decompose process for each branch
-        for (Thought thought : root.thoughts()) {
-            decomposeOp.process(thought);
-        }
+        // 1. Decompose for each branch
+        for (Thought branchThought : root.thoughts()) {
+            decomposeOp.process(branchThought);
+            System.out.println("Decompose for branch complete");
 
-        // Now evaluate the branches
-        for (Thought t2 : root.thoughts()) {
+            // 2. Now answer all steps of this branch
+            Thought prev = null;
+            for (Thought step : branchThought.thoughts()) {
+                answerOp.answerThought(step, prev);
+                step = prev;
+            }
 
-            answerOp.answerThought(t2);
-            evalOp.evaluateThought(t2);
-//            for (Thought t3 : t2.thoughts()) {
-//                evaluateThought(t3);
-//            }
+            // 3. Finalize the answer for the branch
+            JsonObject out = finalOp.finalizeAnswer(branchThought);
+            String answer = out.getString("text");
+            branchThought.setResult(answer);
+            if (root.thoughts().size() == 1) {
+                root.setResult(answer);
+            }
         }
 
         return root;
     }
-
-   
 
     protected List<String> lookupQueryContext(String query) {
         return mockContextMap.get(query);
@@ -80,6 +97,10 @@ public class Deepthought {
 
     public void addMockQueryContext(String query, List<String> contextList) {
         this.mockContextMap.put(query, contextList);
+    }
+
+    public void evaluateThought(Thought t) {
+        evalOp.evaluateThought(t);
     }
 
 }

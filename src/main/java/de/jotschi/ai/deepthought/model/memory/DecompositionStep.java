@@ -17,6 +17,8 @@ public class DecompositionStep {
 
     private String text;
 
+    private String context;
+
     private boolean processable;
 
     private String expert;
@@ -47,6 +49,14 @@ public class DecompositionStep {
 
     public boolean isProcessable() {
         return processable;
+    }
+
+    public String getContext() {
+        return context;
+    }
+
+    public void setContext(String context) {
+        this.context = context;
     }
 
 }

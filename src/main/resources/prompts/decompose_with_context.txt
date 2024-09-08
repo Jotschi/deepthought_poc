@@ -1,4 +1,5 @@
 Zerlege folgende Anfrage in Einzelschritte die man dediziert bearbeiten kann. Beantworte die Anfrage nicht.
+Gib im JSON auch eine Schlussanweisung aus die bei der Bewertung der Ergebnisse verwendet werden soll. 
 Weise jedem Schritt eine deutsche Anweisung für einen Experten zu den du konsultieren würdest.
 Gib an ob der Experte auf Wissen zurückgreifen muss. 
 Vermeide Relativsätze.
@@ -10,9 +11,13 @@ Gib auch die Relevanz der Anweisung für das Erfüllen der Anfrage aus. 0 keine 
 Gib aus ob der Einzelschritt weiter in Unterschritte zerlegt werden kann. 
 Gib nur gültiges JSON Array aus. Gib keine Einleitung oder Zusammenfassung aus.
 
-[ {"anweisung": "...", "zerlegbar": true/false, "relevanz": 0, "wissensabfrage_typ": "", "wissensabfrage": true/false, "wissensabfrage_query": "...", "experte": "..."}]
+JSON:
+{ 
+	"einzelschritte": [ {"anweisung": "...", "zerlegbar": true/false, "relevanz": 0, "wissensabfrage_typ": "", "wissensabfrage": true/false, "wissensabfrage_query": "...", "experte": "..."}],
+	"schlussanweisung": ""
+}
 
 Nutze folgende Kontextinformationen:
 ${context}
 
-Hier die Anfrage: 
+Hier die Anfrage:

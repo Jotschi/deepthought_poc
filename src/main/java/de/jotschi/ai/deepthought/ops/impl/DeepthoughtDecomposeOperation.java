@@ -13,6 +13,7 @@ import de.jotschi.ai.deepthought.model.Thought;
 import de.jotschi.ai.deepthought.model.memory.DecompositionResult;
 import de.jotschi.ai.deepthought.model.memory.DecompositionStep;
 import de.jotschi.ai.deepthought.ops.AbstractDeepthoughtOperation;
+import de.jotschi.ai.deepthought.util.TextUtil;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -22,24 +23,25 @@ public class DeepthoughtDecomposeOperation extends AbstractDeepthoughtOperation 
         super(llm, ps);
     }
 
-    @Override
     public void process(Thought thought) throws JsonMappingException, JsonProcessingException {
         JsonObject json = cache.computeIfAbsent("decomp", thought.id(), cid -> {
-            return computeQuery(thought.text(), thought.context());
+            return computeDecompose(thought.text(), thought.context());
         });
         DecompositionResult decomp = mapper.readValue(json.encodePrettily(), DecompositionResult.class);
 
         for (DecompositionStep step : decomp.getSteps()) {
             String stepQuery = step.isQueryFlag() ? step.getQueryText() : step.getText();
-            Thought stepThought = Thought.of(stepQuery).setExpert(step.getExpert());
+            String context = step.getContext();
+            Thought stepThought = Thought.of(stepQuery, context).setExpert(step.getExpert());
             thought.add(stepThought);
             if (Deepthought.RECURSIVE) {
                 process(stepThought);
             }
         }
+        thought.setSummaryQuery(decomp.getSummaryQuery());
     }
 
-    private JsonObject computeQuery(String query, String context) {
+    private JsonObject computeDecompose(String query, String context) {
 
         Prompt prompt = null;
         if (context != null) {
@@ -50,18 +52,23 @@ public class DeepthoughtDecomposeOperation extends AbstractDeepthoughtOperation 
         }
 
         LLMContext ctx = LLMContext.ctx(prompt, Deepthought.PRIMARY_LLM);
-        prompt.setText(query);
-        String out = llm.generate(ctx, "text");
+        prompt.setText(TextUtil.quote(query));
+
+        System.out.println(prompt.llmInput());
+        String out = llm.generate(ctx, "json");
         System.out.println(out);
-        JsonArray json = new JsonArray(out);
+        JsonObject json = new JsonObject(out);
         JsonArray jsonOut = new JsonArray();
-        for (int i = 0; i < json.size(); i++) {
+        String summaryQuery = json.getString("schlussanweisung");
+        JsonArray schritte = json.getJsonArray("einzelschritte");
+        for (int i = 0; i < schritte.size(); i++) {
             // In
-            JsonObject stepIn = json.getJsonObject(i);
+            JsonObject stepIn = schritte.getJsonObject(i);
             boolean queryFlag = stepIn.getBoolean("wissensabfrage");
             String queryText = stepIn.getString("wissensabfrage_query");
             String queryType = stepIn.getString("wissensabfrage_typ");
             String text = stepIn.getString("anweisung");
+            String stepContext = stepIn.getString("informationen");
             String expert = stepIn.getString("experte");
             boolean processable = stepIn.getBoolean("zerlegbar");
             int relevance = stepIn.getInteger("relevanz");
@@ -92,12 +99,14 @@ public class DeepthoughtDecomposeOperation extends AbstractDeepthoughtOperation 
             stepOut.put("relevance", relevance);
             stepOut.put("text", text);
             stepOut.put("expert", expert);
+            stepOut.put("context", stepContext);
             jsonOut.add(stepOut);
         }
 
         JsonObject datasetEntry = new JsonObject();
         datasetEntry.put("query", query);
         datasetEntry.put("steps", jsonOut);
+        datasetEntry.put("summary_query", summaryQuery);
         datasetEntry.put("context", context);
         System.out.println(datasetEntry.encodePrettily());
         return datasetEntry;

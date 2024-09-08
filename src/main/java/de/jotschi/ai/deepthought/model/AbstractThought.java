@@ -24,6 +24,8 @@ public abstract class AbstractThought implements Thought {
 
     private Thought parent;
 
+    private String summaryQuery;
+
     public AbstractThought(String text, String context) {
         this.text = text;
         this.context = context;
@@ -98,6 +100,16 @@ public abstract class AbstractThought implements Thought {
     public Thought setExpert(String expert) {
         this.expert = expert;
         return this;
+    }
+
+    @Override
+    public String getSummaryQuery() {
+        return summaryQuery;
+    }
+
+    @Override
+    public void setSummaryQuery(String summaryQuery) {
+        this.summaryQuery = summaryQuery;
     }
 
     @Override

@@ -3,10 +3,15 @@ package de.jotschi.ai.deepthought.model.memory;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class DecompositionResult {
 
     private String query;
     private List<DecompositionStep> steps = new ArrayList<>();
+
+    @JsonProperty("summary_query")
+    private String summaryQuery;
 
     public String getQuery() {
         return query;
@@ -22,6 +27,10 @@ public class DecompositionResult {
 
     public void setSteps(List<DecompositionStep> steps) {
         this.steps = steps;
+    }
+
+    public String getSummaryQuery() {
+        return summaryQuery;
     }
 
 }

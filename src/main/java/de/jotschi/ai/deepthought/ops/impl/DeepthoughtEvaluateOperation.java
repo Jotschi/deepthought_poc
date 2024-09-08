@@ -1,8 +1,5 @@
 package de.jotschi.ai.deepthought.ops.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-
 import de.jotschi.ai.deepthought.Deepthought;
 import de.jotschi.ai.deepthought.llm.LLMContext;
 import de.jotschi.ai.deepthought.llm.ollama.OllamaService;
@@ -49,7 +46,7 @@ public class DeepthoughtEvaluateOperation extends AbstractDeepthoughtOperation {
         json.put("altes_ergebnis", t.result());
         return json;
     }
-    
+
     public JsonObject evaluateThought(Thought t) {
         // JsonObject json = cache.computeIfAbsent("eval", t.id(), cid -> {
 //        for (Thought sub : t.thoughts()) {
@@ -57,12 +54,6 @@ public class DeepthoughtEvaluateOperation extends AbstractDeepthoughtOperation {
 //        }
         return new JsonObject();
         // });
-    }
-
-    @Override
-    public void process(Thought thought) throws JsonMappingException, JsonProcessingException {
-        // TODO Auto-generated method stub
-        
     }
 
 }

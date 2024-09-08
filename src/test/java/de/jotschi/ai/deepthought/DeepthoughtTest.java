@@ -32,10 +32,17 @@ public class DeepthoughtTest extends AbstractLLMTest {
         dt.addMockQueryContext(QUERY, List.of(CONTEXT_1, CONTEXT_2, CONTEXT_3));
         Thought t = dt.process(QUERY);
         System.out.println(t.toString());
-        System.out.println("Answers:\n\n" + dt.computeAnswer(t));
     }
 
     @Test
+    public void testQA() throws IOException, NoSuchAlgorithmException {
+        String answer = dt.process(QA_QUERY).result();
+        System.out.println(answer);
+
+    }
+
+    @Test
+    @Disabled
     public void testEvaluate() {
         Thought t = Thought.of("Warum sind die Delfine von der Erde verschwunden bevor sie zerstört wurde?");
         Thought sub1 = Thought.of("Wo spielt der Roman 'Macht's gut und danke für den Fisch'").setResult(

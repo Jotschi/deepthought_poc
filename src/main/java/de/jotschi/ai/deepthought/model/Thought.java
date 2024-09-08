@@ -52,4 +52,8 @@ public interface Thought {
         return new ThoughtImpl(query, context);
     }
 
+    void setSummaryQuery(String summaryQuery);
+
+    String getSummaryQuery();
+
 }

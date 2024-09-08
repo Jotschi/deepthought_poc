@@ -167,7 +167,10 @@ public class ArcChallengeTest extends AbstractLLMTest {
 
         Thought t = dt.process(query);
         // System.out.println(t.toString());
-        return dt.computeAnswer(t);
+        for( Thought branch: t.thoughts()) {
+            System.out.println(branch.result());
+        }
+        return null;
     }
 
     private String toQuery(String question, String choices) {

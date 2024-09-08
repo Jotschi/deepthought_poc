@@ -18,12 +18,16 @@ import io.vertx.core.json.JsonObject;
 public class JsonCache {
 
     private static final Logger logger = LoggerFactory.getLogger(JsonCache.class);
+    private boolean enabled;
 
     public JsonCache() {
-
+        this.enabled = false;
     }
 
     public JsonObject computeIfAbsent(String prefix, String id, Function<String, JsonObject> mappingFunction) {
+        if (!enabled) {
+            return mappingFunction.apply(id);
+        }
         Path cacheFolder = Path.of("cache");
         try {
             Path cachePath = cacheFolder.resolve(toCachePath(prefix, id));
