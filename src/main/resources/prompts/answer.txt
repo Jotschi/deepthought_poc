@@ -1,5 +1,5 @@
 Du bist ein ${expert} und hast folgende Anfrage erhalten. Liefere Informationen für die Anfrage.
-Gib zudem in Prozent aus sicher du bist das die Informationen zur Anfrage passen.
+Gib zudem in Prozent aus wie sicher du bist das die Informationen zur Anfrage passen.
 Gib die Informationen nur als gültiges JSON aus.
 
 
@@ -11,8 +11,7 @@ Json Format:
 
 ${prev_context}
 
+${context}
+
 Anfrage:
 ${query}
-
-Kontext:
-${context}

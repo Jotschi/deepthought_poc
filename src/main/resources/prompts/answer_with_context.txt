@@ -8,7 +8,7 @@ Json Format:
 	"anteil": "Anteil in %"
 }
 
-Kontext:
 ${context}
 
 Anfrage:
+${query}

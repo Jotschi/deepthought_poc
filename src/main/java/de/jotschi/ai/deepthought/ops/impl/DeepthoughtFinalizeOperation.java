@@ -27,14 +27,14 @@ public class DeepthoughtFinalizeOperation extends AbstractDeepthoughtOperation {
         LLMContext ctx = LLMContext.ctx(prompt, Deepthought.PRIMARY_LLM);
         double score = 0f;
         
-        Thought subThought = branch.thoughts().getLast();
-        contextBuilder.append("\n\n# " + subThought.text() + ":\n\n" + TextUtil.quote(subThought.result()));
-        /*
+        //Thought subThought = branch.thoughts().getLast();
+        //contextBuilder.append("\n\n# " + subThought.text() + ":\n\n" + TextUtil.quote(subThought.result()));
+        
         for (Thought subThought : branch.thoughts()) {
-            contextBuilder.append("\n\n# " + subThought.text() + ":\n\n" + TextUtil.quote(subThought.result()));
+            contextBuilder.append("\n\n# " + subThought.text() + "\n\n" + TextUtil.quote(subThought.result()));
             score += subThought.score();
         }
-        */
+        
         prompt.set("summary_query", branch.getSummaryQuery());
         prompt.set("feedback", contextBuilder.toString());
         prompt.setText(branch.text());
@@ -49,6 +49,7 @@ public class DeepthoughtFinalizeOperation extends AbstractDeepthoughtOperation {
             JsonObject jsonOut = new JsonObject();
             jsonOut.put("score", outScore);
             jsonOut.put("text", txt);
+            jsonOut.put("prompt", prompt.llmInput());
             return jsonOut;
         });
 

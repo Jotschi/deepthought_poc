@@ -36,7 +36,7 @@ public class DeepthoughtTest extends AbstractLLMTest {
 
     @Test
     public void testQA() throws IOException, NoSuchAlgorithmException {
-        String answer = dt.process(QA_QUERY_2).result();
+        String answer = dt.process(QA_QUERY).result();
         System.out.println(answer);
     }
 

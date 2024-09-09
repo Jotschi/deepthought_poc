@@ -8,6 +8,7 @@ import de.jotschi.ai.deepthought.llm.prompt.PromptKey;
 import de.jotschi.ai.deepthought.llm.prompt.PromptService;
 import de.jotschi.ai.deepthought.model.Thought;
 import de.jotschi.ai.deepthought.ops.AbstractDeepthoughtOperation;
+import de.jotschi.ai.deepthought.ops.EvalHelper;
 import de.jotschi.ai.deepthought.util.TextUtil;
 import io.vertx.core.json.JsonObject;
 
@@ -30,11 +31,6 @@ public class DeepthoughtAnswerOperation extends AbstractDeepthoughtOperation {
         System.out.println(json.encodePrettily());
         t.setResult(json.getString("antwort"));
         t.setConfidence(parseAnteil(json.getString("anteil")));
-
-//        // Proceed with sub thoughts
-//        for (Thought thought : t.thoughts()) {
-//            answerThought(thought);
-//        }
     }
 
     public JsonObject answer(Thought t, Thought prev) {
@@ -46,10 +42,10 @@ public class DeepthoughtAnswerOperation extends AbstractDeepthoughtOperation {
         Prompt prompt = null;
         if (context == null) {
             prompt = ps.getPrompt(PromptKey.ANSWER);
-            prompt.set("context", context);
+            prompt.set("context", "");
         } else {
             prompt = ps.getPrompt(PromptKey.ANSWER_WITH_CONTEXT);
-            prompt.set("context", context);
+            prompt.set("context", "Kontext:\n" + context);
         }
 
         if (expert != null) {
@@ -65,16 +61,18 @@ public class DeepthoughtAnswerOperation extends AbstractDeepthoughtOperation {
             prompt.set("prev_context", "");
         }
 
-        prompt.set("query", expert);
-
-        System.out.println("Answer: " + prompt.llmInput());
-
+        prompt.set("query", text);
         LLMContext ctx = LLMContext.ctx(prompt, Deepthought.PRIMARY_LLM);
-        String jsonStr = llm.generate(ctx, "json");
+
+        String jsonStr = EvalHelper.evaluate(llm, text, q -> {
+            String out = llm.generate(ctx, "json");
+            return out;
+        });
         JsonObject json = new JsonObject(jsonStr);
         // json.put("query", query);
         json.put("context", context);
         json.put("expert", expert);
+        json.put("prompt", prompt.llmInput());
         System.out.println(json.encodePrettily());
         return json;
     }

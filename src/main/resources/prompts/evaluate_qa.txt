@@ -5,5 +5,7 @@ Beachte hierbei dir Korrektheit der Antwort. Gib nur die Bewertung als Zahl aus 
 Frage: 
 ${query}
 
+${context}
+
 Antwort:
 ${answer}
