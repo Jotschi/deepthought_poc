@@ -23,4 +23,18 @@ public class AbstractLLMTest {
 
             Gib nur den Buchstaben für die Antwort aus.
             """;
+
+    public static String QA_QUERY_2 = """
+            Welches Verfahren bestimmt am besten, ob die Wassertemperatur die Zeit beeinflusst, die ein Zuckerwürfel zum Auflösen benötigt?
+
+            Mögliche Antworten:
+
+            A) Testen Sie drei Zuckerwürfel, jeweils einen in drei verschiedenen Wassertemperaturen.
+            B) Testen Sie drei Zuckerwürfel in einer Wassertemperatur.
+            C) Testen Sie einen zerkleinerten Zuckerwürfel und einen ganzen Zuckerwürfel im Wasser.
+            D) Testen Sie drei Zuckerwürfel, jeweils einen in einer Säure, einer Base und Wasser.
+
+            Gib nur den Buchstaben für die Antwort aus.
+            """;
+
 }

@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 
 import de.jotschi.ai.deepthought.cache.JsonCache;
 import de.jotschi.ai.deepthought.llm.LLM;
-import de.jotschi.ai.deepthought.model.Thought;
 import de.jotschi.ai.deepthought.util.HashUtil;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -51,7 +50,7 @@ public class ArcChallengeTest extends AbstractLLMTest {
                 String evalId = HashUtil.md5(id + "_" + languageModel.key());
                 JsonObject result = cache.computeIfAbsent("eval-arc_direct", evalId, cid -> {
                     String query = toQuery(question, choices);
-                    //System.out.println(query);
+                    // System.out.println(query);
                     String out = llm.generate(languageModel, query, 0.3f, "text");
                     return new JsonObject().put("id", id).put("answer", out).put("answerKey", answerKey);
                 });
@@ -83,7 +82,7 @@ public class ArcChallengeTest extends AbstractLLMTest {
                 String choices = entry.getString("choices");
 
                 String out = answer(question, choices);
-                //System.out.println(out);
+                // System.out.println(out);
 
                 if (answerMatches(answerKey, out)) {
                     correct.incrementAndGet();
@@ -123,7 +122,7 @@ public class ArcChallengeTest extends AbstractLLMTest {
             return true;
         }
 
-        //System.out.println("FALSCH: [" + expectedAnswer + "] " + out);
+        // System.out.println("FALSCH: [" + expectedAnswer + "] " + out);
 //        try {
 //            System.in.read();
 //        } catch (IOException e) {
@@ -164,13 +163,7 @@ public class ArcChallengeTest extends AbstractLLMTest {
 
     private String answer(String question, String choices) throws IOException, NoSuchAlgorithmException {
         String query = toQuery(question, choices);
-
-        Thought t = dt.process(query);
-        // System.out.println(t.toString());
-        for( Thought branch: t.thoughts()) {
-            System.out.println(branch.result());
-        }
-        return null;
+        return dt.process(query).result();
     }
 
     private String toQuery(String question, String choices) {

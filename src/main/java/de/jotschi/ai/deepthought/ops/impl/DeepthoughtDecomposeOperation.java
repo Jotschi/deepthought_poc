@@ -13,14 +13,18 @@ import de.jotschi.ai.deepthought.model.Thought;
 import de.jotschi.ai.deepthought.model.memory.DecompositionResult;
 import de.jotschi.ai.deepthought.model.memory.DecompositionStep;
 import de.jotschi.ai.deepthought.ops.AbstractDeepthoughtOperation;
+import de.jotschi.ai.deepthought.ops.EvalHelper;
 import de.jotschi.ai.deepthought.util.TextUtil;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public class DeepthoughtDecomposeOperation extends AbstractDeepthoughtOperation {
 
+    private DeepthoughtDecomposeContextOperation contextOp;
+
     public DeepthoughtDecomposeOperation(OllamaService llm, PromptService ps) {
         super(llm, ps);
+        this.contextOp = new DeepthoughtDecomposeContextOperation(llm, ps);
     }
 
     public void process(Thought thought) throws JsonMappingException, JsonProcessingException {
@@ -59,16 +63,16 @@ public class DeepthoughtDecomposeOperation extends AbstractDeepthoughtOperation 
         System.out.println(out);
         JsonObject json = new JsonObject(out);
         JsonArray jsonOut = new JsonArray();
-        String summaryQuery = json.getString("schlussanweisung");
-        JsonArray schritte = json.getJsonArray("einzelschritte");
+        String summaryQuery = json.getString("schlussgedanke");
+        JsonArray schritte = json.getJsonArray("gedanken");
         for (int i = 0; i < schritte.size(); i++) {
             // In
             JsonObject stepIn = schritte.getJsonObject(i);
             boolean queryFlag = stepIn.getBoolean("wissensabfrage");
             String queryText = stepIn.getString("wissensabfrage_query");
             String queryType = stepIn.getString("wissensabfrage_typ");
-            String text = stepIn.getString("anweisung");
-            String stepContext = stepIn.getString("informationen");
+            String text = stepIn.getString("gedanke");
+            String stepContext = EvalHelper.evaluate(llm, query, q -> contextOp.process(text, q));
             String expert = stepIn.getString("experte");
             boolean processable = stepIn.getBoolean("zerlegbar");
             int relevance = stepIn.getInteger("relevanz");
@@ -83,7 +87,7 @@ public class DeepthoughtDecomposeOperation extends AbstractDeepthoughtOperation 
                 throw new RuntimeException("Invalid json - invalid relevance range");
             }
 
-            System.out.println(stepIn.encodePrettily());
+            // System.out.println(stepIn.encodePrettily());
 
             // Out
             JsonObject stepOut = new JsonObject();

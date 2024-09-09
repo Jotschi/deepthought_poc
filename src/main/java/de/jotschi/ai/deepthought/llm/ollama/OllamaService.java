@@ -50,7 +50,7 @@ public class OllamaService implements LLMService {
                 .baseUrl(url)
                 .timeout(Duration.ofMinutes(15))
                 .modelName(ctx.llmModel().key())
-                .numPredict(4096)
+                //.numPredict(4096)
                 .format(format)
                 .temperature(temperature)
                 .build();

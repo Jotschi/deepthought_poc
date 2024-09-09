@@ -21,7 +21,7 @@ public class JsonCache {
     private boolean enabled;
 
     public JsonCache() {
-        this.enabled = false;
+        this.enabled = true;
     }
 
     public JsonObject computeIfAbsent(String prefix, String id, Function<String, JsonObject> mappingFunction) {

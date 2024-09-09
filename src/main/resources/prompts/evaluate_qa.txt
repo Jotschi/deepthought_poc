@@ -1,0 +1,9 @@
+Bewerte folgende Antwort und gib einen Wert von 0 bis 10 zurück welcher Aussagt wie zufrieden du mit der Antwort bist.
+10 entspricht hier maximaler Zufriedenheit.
+Beachte hierbei dir Korrektheit der Antwort. Gib nur die Bewertung als Zahl aus und keine weiteren Angaben.
+
+Frage: 
+${query}
+
+Antwort:
+${answer}

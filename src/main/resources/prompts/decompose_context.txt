@@ -1,0 +1,13 @@
+
+Text:
+<text>
+${query}
+</text>
+
+Gedanke:
+${thought}
+
+Gib Informationen aus dem <text> an welche zu dem Gedanken passen bzw. hilfreich für seine Beantwortung sind.
+Beantworte hierbei die Anfrage im <text> nicht.
+Wenn du den Gedanken nicht beantworten kannst: Gib Informationen aus deinem Wissen aus.
+Gib nur die Information aus. Keine weiteren Erklärungen oder Beispiele.
