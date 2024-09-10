@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 
 import de.jotschi.ai.deepthought.Deepthought;
 import de.jotschi.ai.deepthought.llm.LLMContext;
-import de.jotschi.ai.deepthought.llm.ollama.OllamaService;
+import de.jotschi.ai.deepthought.llm.ollama.CachingAsyncOllamaService;
 import de.jotschi.ai.deepthought.llm.prompt.Prompt;
 import de.jotschi.ai.deepthought.llm.prompt.PromptKey;
 import de.jotschi.ai.deepthought.llm.prompt.PromptService;
@@ -22,15 +22,13 @@ public class DeepthoughtDecomposeOperation extends AbstractDeepthoughtOperation 
 
     private DeepthoughtDecomposeContextOperation contextOp;
 
-    public DeepthoughtDecomposeOperation(OllamaService llm, PromptService ps) {
+    public DeepthoughtDecomposeOperation(CachingAsyncOllamaService llm, PromptService ps) {
         super(llm, ps);
         this.contextOp = new DeepthoughtDecomposeContextOperation(llm, ps);
     }
 
     public void process(Thought thought) throws JsonMappingException, JsonProcessingException {
-        JsonObject json = cache.computeIfAbsent("decomp", thought.id(), cid -> {
-            return computeDecompose(thought.text(), thought.context());
-        });
+        JsonObject json = computeDecompose(thought.text(), thought.context());
         DecompositionResult decomp = mapper.readValue(json.encodePrettily(), DecompositionResult.class);
 
         for (DecompositionStep step : decomp.getSteps()) {
@@ -58,11 +56,11 @@ public class DeepthoughtDecomposeOperation extends AbstractDeepthoughtOperation 
         LLMContext ctx = LLMContext.ctx(prompt, Deepthought.PRIMARY_LLM);
         prompt.setText(TextUtil.quote(query));
 
-        System.out.println(prompt.llmInput());
-        String out = llm.generate(ctx, "json");
-        System.out.println(out);
-        JsonObject json = new JsonObject(out);
-        JsonArray jsonOut = new JsonArray();
+        // System.out.println(prompt.llmInput());
+        JsonObject json = llm.generateJson(prompt, Deepthought.PRIMARY_LLM).get();
+        JsonObject jsonOut = new JsonObject();
+        // System.out.println(out);
+
         String summaryQuery = json.getString("schlussgedanke");
         JsonArray schritte = json.getJsonArray("gedanken");
         for (int i = 0; i < schritte.size(); i++) {
@@ -77,7 +75,7 @@ public class DeepthoughtDecomposeOperation extends AbstractDeepthoughtOperation 
             boolean processable = stepIn.getBoolean("zerlegbar");
             int relevance = stepIn.getInteger("relevanz");
             if (queryFlag && (queryText == null || queryType == null)) {
-                System.out.println(stepIn.encodePrettily());
+                // System.out.println(stepIn.encodePrettily());
                 throw new RuntimeException("Invalid json - invalid query");
             }
             if (text == null) {
@@ -112,7 +110,7 @@ public class DeepthoughtDecomposeOperation extends AbstractDeepthoughtOperation 
         datasetEntry.put("steps", jsonOut);
         datasetEntry.put("summary_query", summaryQuery);
         datasetEntry.put("context", context);
-        System.out.println(datasetEntry.encodePrettily());
+        // System.out.println(datasetEntry.encodePrettily());
         return datasetEntry;
     }
 

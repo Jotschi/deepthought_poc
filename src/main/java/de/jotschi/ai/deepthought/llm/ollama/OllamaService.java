@@ -26,7 +26,7 @@ public class OllamaService implements LLMService {
 
     public String generate(LLM llm, String prompt, double temperature, String format) {
         String url = llm.primaryHost() != null ? llm.primaryHost() : config.getOllamaAPIUrl();
-        logger.info("Using {} for {}", url, llm);
+        // logger.info("Using {} for {}", url, llm);
         ChatLanguageModel model = OllamaChatModel.builder()
                 .baseUrl(url)
                 .timeout(Duration.ofMinutes(15))
@@ -39,11 +39,15 @@ public class OllamaService implements LLMService {
         return model.generate(prompt);
     }
 
+    public String generateText(LLMContext ctx, double temperature) {
+        return generate(ctx, temperature, "text");
+    }
+
     @Override
     public String generate(LLMContext ctx, double temperature, String format) {
         LLM llm = ctx.llmModel();
         String url = llm.primaryHost() != null ? llm.primaryHost() : config.getOllamaAPIUrl();
-        logger.info("Using {} for {}", url, llm);
+        // logger.info("Using {} for {}", url, llm);
         ChatLanguageModel model = OllamaChatModel.builder()
                 .baseUrl(url)
                 .timeout(Duration.ofMinutes(15))
@@ -60,7 +64,7 @@ public class OllamaService implements LLMService {
     public void listModels(LLMContext ctx) {
         LLM llm = ctx.llmModel();
         String url = llm.primaryHost() != null ? llm.primaryHost() : config.getOllamaAPIUrl();
-        logger.info("Using {} for {}", url, llm);
+        // logger.info("Using {} for {}", url, llm);
         OllamaModels models = OllamaModels.builder().baseUrl(url).build();
         for (OllamaModel model : models.availableModels().content()) {
             System.out.println(model.getName());

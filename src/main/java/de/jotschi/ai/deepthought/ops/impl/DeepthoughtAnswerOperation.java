@@ -1,8 +1,7 @@
 package de.jotschi.ai.deepthought.ops.impl;
 
 import de.jotschi.ai.deepthought.Deepthought;
-import de.jotschi.ai.deepthought.llm.LLMContext;
-import de.jotschi.ai.deepthought.llm.ollama.OllamaService;
+import de.jotschi.ai.deepthought.llm.ollama.CachingAsyncOllamaService;
 import de.jotschi.ai.deepthought.llm.prompt.Prompt;
 import de.jotschi.ai.deepthought.llm.prompt.PromptKey;
 import de.jotschi.ai.deepthought.llm.prompt.PromptService;
@@ -14,7 +13,7 @@ import io.vertx.core.json.JsonObject;
 
 public class DeepthoughtAnswerOperation extends AbstractDeepthoughtOperation {
 
-    public DeepthoughtAnswerOperation(OllamaService llm, PromptService ps) {
+    public DeepthoughtAnswerOperation(CachingAsyncOllamaService llm, PromptService ps) {
         super(llm, ps);
     }
 
@@ -28,7 +27,7 @@ public class DeepthoughtAnswerOperation extends AbstractDeepthoughtOperation {
         JsonObject json = cache.computeIfAbsent("answer", t.id(), cid -> {
             return answer(t, prev);
         });
-        System.out.println(json.encodePrettily());
+        //System.out.println(json.encodePrettily());
         t.setResult(json.getString("antwort"));
         t.setConfidence(parseAnteil(json.getString("anteil")));
     }
@@ -62,18 +61,16 @@ public class DeepthoughtAnswerOperation extends AbstractDeepthoughtOperation {
         }
 
         prompt.set("query", text);
-        LLMContext ctx = LLMContext.ctx(prompt, Deepthought.PRIMARY_LLM);
 
         String jsonStr = EvalHelper.evaluate(llm, text, q -> {
-            String out = llm.generate(ctx, "json");
-            return out;
+            return llm.generateJson(prompt, Deepthought.PRIMARY_LLM).get();
         });
         JsonObject json = new JsonObject(jsonStr);
         // json.put("query", query);
         json.put("context", context);
         json.put("expert", expert);
         json.put("prompt", prompt.llmInput());
-        System.out.println(json.encodePrettily());
+        //System.out.println(json.encodePrettily());
         return json;
     }
 

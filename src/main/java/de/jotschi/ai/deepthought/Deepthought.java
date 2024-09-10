@@ -8,7 +8,7 @@ import java.util.Map;
 
 import de.jotschi.ai.deepthought.datasource.DatasourceManager;
 import de.jotschi.ai.deepthought.llm.LLM;
-import de.jotschi.ai.deepthought.llm.ollama.OllamaService;
+import de.jotschi.ai.deepthought.llm.ollama.CachingAsyncOllamaService;
 import de.jotschi.ai.deepthought.llm.prompt.PromptService;
 import de.jotschi.ai.deepthought.model.Thought;
 import de.jotschi.ai.deepthought.ops.impl.DeepthoughtAnswerOperation;
@@ -34,7 +34,7 @@ public class Deepthought {
     private DeepthoughtEvaluateOperation evalOp;
     private DeepthoughtFinalizeOperation finalOp;
 
-    public Deepthought(OllamaService llm, PromptService ps) {
+    public Deepthought(CachingAsyncOllamaService llm, PromptService ps) {
         this.decomposeOp = new DeepthoughtDecomposeOperation(llm, ps);
         this.answerOp = new DeepthoughtAnswerOperation(llm, ps);
         this.evalOp = new DeepthoughtEvaluateOperation(llm, ps);

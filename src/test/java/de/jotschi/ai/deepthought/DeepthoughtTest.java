@@ -7,13 +7,22 @@ import java.util.List;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import de.jotschi.ai.deepthought.cache.LLMCache;
 import de.jotschi.ai.deepthought.llm.LLM;
+import de.jotschi.ai.deepthought.llm.prompt.Prompt;
+import de.jotschi.ai.deepthought.llm.prompt.PromptKey;
+import de.jotschi.ai.deepthought.llm.prompt.impl.PromptImpl;
 import de.jotschi.ai.deepthought.model.Thought;
+import io.vertx.core.json.JsonObject;
 
 /**
  * Unit test which executes the Deepthought PoC implementation.
  */
 public class DeepthoughtTest extends AbstractLLMTest {
+
+    static {
+        LLMCache.enabled = false;
+    }
 
 //    public static final String QUERY = "Welche Aufgabe bekommt \"Deep Thought\" und wie reagiert er auf diese Aufgabe?";
 
@@ -58,9 +67,9 @@ public class DeepthoughtTest extends AbstractLLMTest {
 
     @Test
     @Disabled
-    public void noDeepThoughtTest() {
-        String answer = llm.generate(LLM.OLLAMA_GEMMA2_27B_INST_Q8, QUERY + " Gib aus wieviel prozent der informationen aus dem context du für die beantwortung genutzt hast. Antworte JSON",
-                0.3d, "json");
+    public void noDeepThoughtTest() throws Exception  {
+        Prompt prompt = new PromptImpl(QUERY + " Gib aus wieviel prozent der informationen aus dem context du für die beantwortung genutzt hast. Antworte JSON", PromptKey.EVAL);
+        JsonObject answer = llm.generateJson(prompt, LLM.OLLAMA_GEMMA2_27B_INST_Q8).get();
         System.out.println("Answer:\n\n" + answer);
     }
 }

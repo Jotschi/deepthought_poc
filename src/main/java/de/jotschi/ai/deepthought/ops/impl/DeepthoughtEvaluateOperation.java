@@ -2,7 +2,7 @@ package de.jotschi.ai.deepthought.ops.impl;
 
 import de.jotschi.ai.deepthought.Deepthought;
 import de.jotschi.ai.deepthought.llm.LLMContext;
-import de.jotschi.ai.deepthought.llm.ollama.OllamaService;
+import de.jotschi.ai.deepthought.llm.ollama.CachingAsyncOllamaService;
 import de.jotschi.ai.deepthought.llm.prompt.Prompt;
 import de.jotschi.ai.deepthought.llm.prompt.PromptKey;
 import de.jotschi.ai.deepthought.llm.prompt.PromptService;
@@ -13,7 +13,7 @@ import io.vertx.core.json.JsonObject;
 
 public class DeepthoughtEvaluateOperation extends AbstractDeepthoughtOperation {
 
-    public DeepthoughtEvaluateOperation(OllamaService llm, PromptService ps) {
+    public DeepthoughtEvaluateOperation(CachingAsyncOllamaService llm, PromptService ps) {
         super(llm, ps);
     }
 
@@ -37,11 +37,10 @@ public class DeepthoughtEvaluateOperation extends AbstractDeepthoughtOperation {
             builder.append("# " + sub.text() + ":\n" + TextUtil.quote(sub.result()) + "\n\n");
         }
         prompt.set("extra", builder.toString());
-        System.out.println(prompt.llmInput());
-        String jsonStr = llm.generate(ctx, "json");
+        //System.out.println(prompt.llmInput());
+        JsonObject json = llm.generateJson(ctx, "json");
 
-        System.out.println(jsonStr);
-        JsonObject json = new JsonObject(jsonStr);
+        //System.out.println(jsonStr);
         json.put("query", t.text());
         json.put("altes_ergebnis", t.result());
         return json;

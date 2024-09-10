@@ -10,15 +10,18 @@ import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
 
-import de.jotschi.ai.deepthought.cache.JsonCache;
+import de.jotschi.ai.deepthought.cache.LLMCache;
 import de.jotschi.ai.deepthought.llm.LLM;
+import de.jotschi.ai.deepthought.llm.prompt.Prompt;
+import de.jotschi.ai.deepthought.llm.prompt.PromptKey;
+import de.jotschi.ai.deepthought.llm.prompt.impl.PromptImpl;
 import de.jotschi.ai.deepthought.util.HashUtil;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 public class ArcChallengeTest extends AbstractLLMTest {
 
-    private JsonCache cache = new JsonCache();
+    private LLMCache cache = new LLMCache();
 
     @Test
     public void testQA_Mercury_SC_407695() throws IOException, NoSuchAlgorithmException {
@@ -48,14 +51,13 @@ public class ArcChallengeTest extends AbstractLLMTest {
                 String choices = entry.getString("choices");
                 LLM languageModel = LLM.OLLAMA_LLAMA31_8B_INST_Q8;
                 String evalId = HashUtil.md5(id + "_" + languageModel.key());
-                JsonObject result = cache.computeIfAbsent("eval-arc_direct", evalId, cid -> {
-                    String query = toQuery(question, choices);
-                    // System.out.println(query);
-                    String out = llm.generate(languageModel, query, 0.3f, "text");
-                    return new JsonObject().put("id", id).put("answer", out).put("answerKey", answerKey);
-                });
+                String query = toQuery(question, choices);
+                // System.out.println(query);
+                Prompt prompt = new PromptImpl(query, PromptKey.EVAL);
+                String out = llm.generateText(prompt, languageModel).get();
+                JsonObject json = new JsonObject().put("id", id).put("answer", out).put("answerKey", answerKey);
 
-                if (answerKey.equalsIgnoreCase(result.getString("answer").trim())) {
+                if (answerKey.equalsIgnoreCase(json.getString("answer").trim())) {
                     correct.incrementAndGet();
                 }
                 // System.out.println("Result: " + result.encodePrettily());
@@ -92,7 +94,7 @@ public class ArcChallengeTest extends AbstractLLMTest {
                 checked.incrementAndGet();
 
                 float factor = correct.floatValue() / checked.floatValue();
-                System.out.printf("Result: %.2f\n", factor);
+                System.err.printf("[" + checked.get() + "] Result: %.2f\n", factor);
             } catch (Exception e) {
                 e.printStackTrace();
             }
