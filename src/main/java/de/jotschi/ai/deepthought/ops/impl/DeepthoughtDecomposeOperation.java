@@ -1,8 +1,5 @@
 package de.jotschi.ai.deepthought.ops.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-
 import de.jotschi.ai.deepthought.Deepthought;
 import de.jotschi.ai.deepthought.llm.LLMContext;
 import de.jotschi.ai.deepthought.llm.ollama.CachingAsyncOllamaService;
@@ -13,7 +10,6 @@ import de.jotschi.ai.deepthought.model.Thought;
 import de.jotschi.ai.deepthought.model.memory.DecompositionResult;
 import de.jotschi.ai.deepthought.model.memory.DecompositionStep;
 import de.jotschi.ai.deepthought.ops.AbstractDeepthoughtOperation;
-import de.jotschi.ai.deepthought.ops.EvalHelper;
 import de.jotschi.ai.deepthought.util.TextUtil;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -27,7 +23,7 @@ public class DeepthoughtDecomposeOperation extends AbstractDeepthoughtOperation 
         this.contextOp = new DeepthoughtDecomposeContextOperation(llm, ps);
     }
 
-    public void process(Thought thought) throws JsonMappingException, JsonProcessingException {
+    public void process(Thought thought) throws Exception {
         JsonObject json = computeDecompose(thought.text(), thought.context());
         DecompositionResult decomp = mapper.readValue(json.encodePrettily(), DecompositionResult.class);
 
@@ -43,7 +39,7 @@ public class DeepthoughtDecomposeOperation extends AbstractDeepthoughtOperation 
         thought.setSummaryQuery(decomp.getSummaryQuery());
     }
 
-    private JsonObject computeDecompose(String query, String context) {
+    private JsonObject computeDecompose(String query, String context) throws Exception {
 
         Prompt prompt = null;
         if (context != null) {
@@ -58,7 +54,7 @@ public class DeepthoughtDecomposeOperation extends AbstractDeepthoughtOperation 
 
         // System.out.println(prompt.llmInput());
         JsonObject json = llm.generateJson(prompt, Deepthought.PRIMARY_LLM).get();
-        JsonObject jsonOut = new JsonObject();
+        JsonArray jsonOut = new JsonArray();
         // System.out.println(out);
 
         String summaryQuery = json.getString("schlussgedanke");
@@ -70,7 +66,7 @@ public class DeepthoughtDecomposeOperation extends AbstractDeepthoughtOperation 
             String queryText = stepIn.getString("wissensabfrage_query");
             String queryType = stepIn.getString("wissensabfrage_typ");
             String text = stepIn.getString("gedanke");
-            String stepContext = EvalHelper.evaluate(llm, query, q -> contextOp.process(text, q));
+            String stepContext = contextOp.process(text, query);
             String expert = stepIn.getString("experte");
             boolean processable = stepIn.getBoolean("zerlegbar");
             int relevance = stepIn.getInteger("relevanz");

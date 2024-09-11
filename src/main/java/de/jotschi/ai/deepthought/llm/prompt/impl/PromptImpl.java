@@ -37,6 +37,7 @@ public class PromptImpl implements Prompt {
     @Override
     public String llmInput() {
         String output = template;
+        System.out.println(output);
         // Poor Mans Template Handling
         for (Entry<String, String> entry : parameters.entrySet()) {
             output = output.replaceAll("\\$\\{" + entry.getKey() + "\\}", entry.getValue());

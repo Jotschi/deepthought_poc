@@ -3,14 +3,12 @@ package de.jotschi.ai.deepthought;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
 
-import de.jotschi.ai.deepthought.cache.LLMCache;
 import de.jotschi.ai.deepthought.llm.LLM;
 import de.jotschi.ai.deepthought.llm.prompt.Prompt;
 import de.jotschi.ai.deepthought.llm.prompt.PromptKey;
@@ -21,10 +19,8 @@ import io.vertx.core.json.JsonObject;
 
 public class ArcChallengeTest extends AbstractLLMTest {
 
-    private LLMCache cache = new LLMCache();
-
     @Test
-    public void testQA_Mercury_SC_407695() throws IOException, NoSuchAlgorithmException {
+    public void testQA_Mercury_SC_407695() throws Exception {
         String question = "Juan und LaKeisha rollen einige Objekte eine Rampe hinunter. Sie möchten sehen, welches Objekt am weitesten rollt. Was sollten sie tun, damit sie ihre Untersuchung wiederholen können?";
 
         String choices = """
@@ -163,7 +159,7 @@ public class ArcChallengeTest extends AbstractLLMTest {
         }
     }
 
-    private String answer(String question, String choices) throws IOException, NoSuchAlgorithmException {
+    private String answer(String question, String choices) throws Exception {
         String query = toQuery(question, choices);
         return dt.process(query).result();
     }

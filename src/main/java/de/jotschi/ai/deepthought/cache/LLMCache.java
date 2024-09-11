@@ -7,8 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
-import java.util.function.Function;
-
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import de.jotschi.ai.deepthought.llm.LLM;
 import de.jotschi.ai.deepthought.llm.prompt.Prompt;
 import de.jotschi.ai.deepthought.util.HashUtil;
-import io.vertx.core.json.JsonObject;
 
 public class LLMCache {
 

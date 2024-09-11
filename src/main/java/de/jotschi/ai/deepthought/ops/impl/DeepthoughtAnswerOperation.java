@@ -7,7 +7,6 @@ import de.jotschi.ai.deepthought.llm.prompt.PromptKey;
 import de.jotschi.ai.deepthought.llm.prompt.PromptService;
 import de.jotschi.ai.deepthought.model.Thought;
 import de.jotschi.ai.deepthought.ops.AbstractDeepthoughtOperation;
-import de.jotschi.ai.deepthought.ops.EvalHelper;
 import de.jotschi.ai.deepthought.util.TextUtil;
 import io.vertx.core.json.JsonObject;
 
@@ -22,17 +21,16 @@ public class DeepthoughtAnswerOperation extends AbstractDeepthoughtOperation {
      * 
      * @param t
      * @param prev
+     * @throws Exception
      */
-    public void answerThought(Thought t, Thought prev) {
-        JsonObject json = cache.computeIfAbsent("answer", t.id(), cid -> {
-            return answer(t, prev);
-        });
-        //System.out.println(json.encodePrettily());
+    public void answerThought(Thought t, Thought prev) throws Exception {
+        JsonObject json = answer(t, prev);
+        // System.out.println(json.encodePrettily());
         t.setResult(json.getString("antwort"));
         t.setConfidence(parseAnteil(json.getString("anteil")));
     }
 
-    public JsonObject answer(Thought t, Thought prev) {
+    public JsonObject answer(Thought t, Thought prev) throws Exception {
 
         String text = t.text();
         String context = t.context();
@@ -62,15 +60,12 @@ public class DeepthoughtAnswerOperation extends AbstractDeepthoughtOperation {
 
         prompt.set("query", text);
 
-        String jsonStr = EvalHelper.evaluate(llm, text, q -> {
-            return llm.generateJson(prompt, Deepthought.PRIMARY_LLM).get();
-        });
-        JsonObject json = new JsonObject(jsonStr);
+        Prompt fPrompt = prompt;
+        JsonObject json = llm.generateJsonAndEval(fPrompt, text, Deepthought.PRIMARY_LLM).get();
         // json.put("query", query);
         json.put("context", context);
         json.put("expert", expert);
         json.put("prompt", prompt.llmInput());
-        //System.out.println(json.encodePrettily());
         return json;
     }
 

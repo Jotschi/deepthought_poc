@@ -1,7 +1,5 @@
 package de.jotschi.ai.deepthought;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,10 +48,9 @@ public class Deepthought {
      * 
      * @param query
      * @return
-     * @throws IOException
-     * @throws NoSuchAlgorithmException
+     * @throws Exception
      */
-    public Thought process(String query) throws IOException, NoSuchAlgorithmException {
+    public Thought process(String query) throws Exception {
         Thought root = Thought.of(query);
         // Load an initial set chunks that might be relevant to the query
         List<String> contextList = lookupQueryContext(query);

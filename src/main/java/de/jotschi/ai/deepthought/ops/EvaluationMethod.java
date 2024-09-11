@@ -1,8 +1,8 @@
 package de.jotschi.ai.deepthought.ops;
 
 @FunctionalInterface
-public interface EvaluationMethod {
+public interface EvaluationMethod<T> {
 
-    String create(String question) throws Exception;
+    EvalResult<T> create(String question) throws Exception;
 
 }

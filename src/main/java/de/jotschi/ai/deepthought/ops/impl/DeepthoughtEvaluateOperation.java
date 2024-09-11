@@ -1,7 +1,8 @@
 package de.jotschi.ai.deepthought.ops.impl;
 
+import java.util.concurrent.ExecutionException;
+
 import de.jotschi.ai.deepthought.Deepthought;
-import de.jotschi.ai.deepthought.llm.LLMContext;
 import de.jotschi.ai.deepthought.llm.ollama.CachingAsyncOllamaService;
 import de.jotschi.ai.deepthought.llm.prompt.Prompt;
 import de.jotschi.ai.deepthought.llm.prompt.PromptKey;
@@ -17,7 +18,7 @@ public class DeepthoughtEvaluateOperation extends AbstractDeepthoughtOperation {
         super(llm, ps);
     }
 
-    public JsonObject evaluate(Thought t) {
+    public JsonObject evaluate(Thought t) throws InterruptedException, ExecutionException {
         Prompt prompt = null;
         prompt = ps.getPrompt(PromptKey.EVAL);
 
@@ -27,7 +28,6 @@ public class DeepthoughtEvaluateOperation extends AbstractDeepthoughtOperation {
         }
         prompt.set("query", t.text());
         prompt.set("result", t.result());
-        LLMContext ctx = LLMContext.ctx(prompt, Deepthought.PRIMARY_LLM);
 
         StringBuilder builder = new StringBuilder();
         for (Thought sub : t.parent().thoughts()) {
@@ -38,7 +38,7 @@ public class DeepthoughtEvaluateOperation extends AbstractDeepthoughtOperation {
         }
         prompt.set("extra", builder.toString());
         //System.out.println(prompt.llmInput());
-        JsonObject json = llm.generateJson(ctx, "json");
+        JsonObject json = llm.generateJson(prompt, Deepthought.PRIMARY_LLM).get();
 
         //System.out.println(jsonStr);
         json.put("query", t.text());
