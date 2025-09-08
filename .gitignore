@@ -4,5 +4,5 @@
 .factorypath
 
 /cache
-/target
-/wikipedia-22-12-de-dpr
+target
+/lib/wikipedia-22-12-de-dpr
