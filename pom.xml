@@ -21,9 +21,9 @@
 		<module>lib</module>
 		<module>server</module>
 	</modules>
-	
+
 	<dependencies>
-	
+
 		<!--Test-->
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>

@@ -161,7 +161,8 @@ public class ArcChallengeTest extends AbstractLLMTest {
 
     private String answer(String question, String choices) throws Exception {
         String query = toQuery(question, choices);
-        return dt.process(query).result();
+        //return dt.process(query).result();
+        return "";
     }
 
     private String toQuery(String question, String choices) {

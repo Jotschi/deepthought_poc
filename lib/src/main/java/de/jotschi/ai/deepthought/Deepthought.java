@@ -8,12 +8,6 @@ import de.jotschi.ai.deepthought.datasource.DatasourceManager;
 import de.jotschi.ai.deepthought.llm.LLM;
 import de.jotschi.ai.deepthought.llm.ollama.CachingAsyncOllamaService;
 import de.jotschi.ai.deepthought.llm.prompt.PromptService;
-import de.jotschi.ai.deepthought.model.Thought;
-import de.jotschi.ai.deepthought.ops.impl.DeepthoughtAnswerOperation;
-import de.jotschi.ai.deepthought.ops.impl.DeepthoughtDecomposeOperation;
-import de.jotschi.ai.deepthought.ops.impl.DeepthoughtEvaluateOperation;
-import de.jotschi.ai.deepthought.ops.impl.DeepthoughtFinalizeOperation;
-import io.vertx.core.json.JsonObject;
 
 public class Deepthought {
 
@@ -27,66 +21,66 @@ public class Deepthought {
     private Map<String, List<String>> mockContextMap = new HashMap<>();
 
     // Operations
-    private DeepthoughtDecomposeOperation decomposeOp;
-    private DeepthoughtAnswerOperation answerOp;
-    private DeepthoughtEvaluateOperation evalOp;
-    private DeepthoughtFinalizeOperation finalOp;
+//    private DeepthoughtDecomposeOperation decomposeOp;
+//    private DeepthoughtAnswerOperation answerOp;
+//    private DeepthoughtEvaluateOperation evalOp;
+//    private DeepthoughtFinalizeOperation finalOp;
 
     public Deepthought(CachingAsyncOllamaService llm, PromptService ps) {
-        this.decomposeOp = new DeepthoughtDecomposeOperation(llm, ps);
-        this.answerOp = new DeepthoughtAnswerOperation(llm, ps);
-        this.evalOp = new DeepthoughtEvaluateOperation(llm, ps);
-        this.finalOp = new DeepthoughtFinalizeOperation(llm, ps);
+//        this.decomposeOp = new DeepthoughtDecomposeOperation(llm, ps);
+//        this.answerOp = new DeepthoughtAnswerOperation(llm, ps);
+//        this.evalOp = new DeepthoughtEvaluateOperation(llm, ps);
+//        this.finalOp = new DeepthoughtFinalizeOperation(llm, ps);
     }
 
     public DatasourceManager datasourceManager() {
         return dsm;
     }
 
-    /**
-     * Decompose the query and process each step sequentially.
-     * 
-     * @param query
-     * @return
-     * @throws Exception
-     */
-    public Thought process(String query) throws Exception {
-        Thought root = Thought.of(query);
-        // Load an initial set chunks that might be relevant to the query
-        List<String> contextList = lookupQueryContext(query);
-
-        // Add the initial root entries
-        if (contextList != null && !contextList.isEmpty()) {
-            for (String context : contextList) {
-                root.add(Thought.of(query, context));
-            }
-        } else {
-            root.add(Thought.of(query));
-        }
-
-        // 1. Decompose for each branch
-        for (Thought branchThought : root.thoughts()) {
-            decomposeOp.process(branchThought);
-            System.out.println("Decompose for branch complete");
-
-            // 2. Now answer all steps of this branch
-            Thought prev = null;
-            for (Thought step : branchThought.thoughts()) {
-                answerOp.answerThought(step, prev);
-                step = prev;
-            }
-
-            // 3. Finalize the answer for the branch
-            JsonObject out = finalOp.finalizeAnswer(branchThought);
-            String answer = out.getString("text");
-            branchThought.setResult(answer);
-            if (root.thoughts().size() == 1) {
-                root.setResult(answer);
-            }
-        }
-
-        return root;
-    }
+//    /**
+//     * Decompose the query and process each step sequentially.
+//     * 
+//     * @param query
+//     * @return
+//     * @throws Exception
+//     */
+//    public Thought process(String query) throws Exception {
+//        Thought root = Thought.of(query);
+//        // Load an initial set chunks that might be relevant to the query
+//        List<String> contextList = lookupQueryContext(query);
+//
+//        // Add the initial root entries
+//        if (contextList != null && !contextList.isEmpty()) {
+//            for (String context : contextList) {
+//                root.add(Thought.of(query, context));
+//            }
+//        } else {
+//            root.add(Thought.of(query));
+//        }
+//
+//        // 1. Decompose for each branch
+//        for (Thought branchThought : root.thoughts()) {
+//            decomposeOp.process(branchThought);
+//            System.out.println("Decompose for branch complete");
+//
+//            // 2. Now answer all steps of this branch
+//            Thought prev = null;
+//            for (Thought step : branchThought.thoughts()) {
+//                answerOp.answerThought(step, prev);
+//                step = prev;
+//            }
+//
+//            // 3. Finalize the answer for the branch
+//            JsonObject out = finalOp.finalizeAnswer(branchThought);
+//            String answer = out.getString("text");
+//            branchThought.setResult(answer);
+//            if (root.thoughts().size() == 1) {
+//                root.setResult(answer);
+//            }
+//        }
+//
+//        return root;
+//    }
 
     protected List<String> lookupQueryContext(String query) {
         return mockContextMap.get(query);
@@ -96,8 +90,8 @@ public class Deepthought {
         this.mockContextMap.put(query, contextList);
     }
 
-    public void evaluateThought(Thought t) {
-        evalOp.evaluateThought(t);
-    }
+//    public void evaluateThought(Thought t) {
+//        evalOp.evaluateThought(t);
+//    }
 
 }

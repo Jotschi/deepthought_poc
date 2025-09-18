@@ -6,6 +6,7 @@ import at.apa.vertx.apex.dagger.module.JsonModule;
 import at.apa.vertx.apex.dagger.module.VertxModule;
 import dagger.BindsInstance;
 import dagger.Component;
+import de.jotschi.ai.deepthought.chat.DeepthoughtChat;
 import de.jotschi.ai.deepthought.config.DeepthoughtConfig;
 import de.jotschi.ai.deepthought.llm.ollama.CachingAsyncOllamaService;
 
@@ -37,5 +38,7 @@ public interface DeepthoughtComponent {
     }
 
     CachingAsyncOllamaService ollama();
+
+    DeepthoughtChat chat();
 
 }

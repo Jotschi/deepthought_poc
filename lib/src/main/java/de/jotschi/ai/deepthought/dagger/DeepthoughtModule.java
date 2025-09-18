@@ -11,7 +11,7 @@ public class DeepthoughtModule {
 
     @Provides
     @Singleton
-    public OllamaLLMProvider mapper() {
+    public OllamaLLMProvider provider() {
         return new OllamaLLMProvider();
     }
 

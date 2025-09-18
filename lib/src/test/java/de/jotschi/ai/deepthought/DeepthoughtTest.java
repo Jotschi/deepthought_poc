@@ -33,19 +33,19 @@ public class DeepthoughtTest extends AbstractLLMTest {
 
     public static final String CONTEXT_3 = "Der Mensch verwüstet die Erde im wahrsten Sinne des Wortes. Die Abholzung von Wäldern, Überdüngung, zu starke Beweidung, Übernutzung durch die Landwirtschaft, falsche Bewässerungsmethoden gehören zu den wichtigsten Ursachen, für die der Mensch verantwortlich ist.";
 
-    @Test
-    @Disabled
-    public void deepThoughtTest() throws Exception {
-        dt.addMockQueryContext(QUERY, List.of(CONTEXT_1, CONTEXT_2, CONTEXT_3));
-        Thought t = dt.process(QUERY);
-        System.out.println(t.toString());
-    }
+//    @Test
+//    @Disabled
+//    public void deepThoughtTest() throws Exception {
+//        dt.addMockQueryContext(QUERY, List.of(CONTEXT_1, CONTEXT_2, CONTEXT_3));
+//        Thought t = dt.process(QUERY);
+//        System.out.println(t.toString());
+//    }
 
-    @Test
-    public void testQA() throws Exception {
-        String answer = dt.process(QA_QUERY).result();
-        System.out.println(answer);
-    }
+//    @Test
+//    public void testQA() throws Exception {
+//        String answer = dt.process(QA_QUERY).result();
+//        System.out.println(answer);
+//    }
 
     @Test
     @Disabled
@@ -58,7 +58,7 @@ public class DeepthoughtTest extends AbstractLLMTest {
 
         t.add(sub1);
         t.add(sub2);
-        dt.evaluateThought(sub2);
+        //dt.evaluateThought(sub2);
 //        t.add(Thought.of("Wird die Erde in 'Macht's gut und danke für den Fisch' zerstört?").setResult(
 //                "Ja, am Ende von Douglas Adams' 'Per Anhalter durch die Galaxis'-Reihe, in dem Buch 'Macht's gut und danke für den Fisch', wird die Erde von den Vogonen zerstört, um Platz für eine Umgehungsstraße zu machen."));
     }
