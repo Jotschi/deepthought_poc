@@ -30,7 +30,7 @@ public class DeepthoughtChat {
         history.clear();
         while (true) {
             String input = ChatUtils.query();
-            System.out.println("Input: " + input);
+            //System.out.println("Input: " + input);
             history.add(new ChatMessageImpl(ChatMessageType.USER, input));
             ChatMessage answer = answer(history);
             System.out.println("Assistant: " + answer.message());

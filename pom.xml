@@ -19,6 +19,7 @@
 
 	<modules>
 		<module>lib</module>
+		<module>memory</module>
 		<module>server</module>
 	</modules>
 

@@ -54,7 +54,7 @@ public class ChatUtils {
             }
         }
 
-        System.out.println(reducedMessages.size());
+        //System.out.println(reducedMessages.size());
         // Cap to the limit
         // return msgs.stream().limit(limit).toList().reversed();
         return reducedMessages.reversed();
